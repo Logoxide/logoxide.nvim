@@ -61,6 +61,7 @@ check() {
   for line in 'hover text Jesus and Nicodemus' \
     'hover colors heading=Jesus and Nicodemus verseNumber=[16]' \
     'verse hover **John 3:16**  4 references in 3 files' 'declaration true' \
+    'blink colors ```topos-bible heading=Jesus and Nicodemus verseNumber=[16]' \
     'callout > [!bible] John 3:16|> Jesus and Nicodemus|> [16] For God so loved the world.' 'book topos-bible://BSB/JHN topos-bible false nofile' \
     'book line [16] For God so loved the world. [17] Jesus said, I did not come to condemn.' \
     'book cursor 4 0' 'book title John' 'woj @lsp.type.wordsOfJesus.topos-bible 16711680' \

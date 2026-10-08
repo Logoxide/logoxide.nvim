@@ -64,6 +64,15 @@ With [lazy.nvim](https://lazy.folke.io):
 - **Telescope**: `:Telescope topos`, plus a picker per search; without Telescope, results open
   in the quickfix list
 
+With [blink.cmp](https://github.com/saghen/blink.cmp), color the passages in its
+documentation window too:
+
+```lua
+completion = {
+  documentation = { draw = function(opts) require('topos').blink_draw(opts) end },
+}
+```
+
 The plugin and the CLI share `~/.config/topos/config.toml`. See `:help topos-bible`, and
 `:checkhealth topos` if something doesn't work.
 

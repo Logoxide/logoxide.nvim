@@ -95,6 +95,27 @@ do
   log("hover colors", table.concat(groups, " "))
   vim.api.nvim_win_close(win, true)
 end
+-- blink.cmp's documentation: the plugin's draw colors a resolved completion's passage
+do
+  local item = client:request_sync("completionItem/resolve", { label = "John 3:16", data = { passage = "John 3:16" } }, 5000, 0).result
+  local buf = vim.api.nvim_create_buf(false, true)
+  require("topos").blink_draw({
+    item = item,
+    window = { get_buf = function() return buf end },
+    default_implementation = function()
+      local lines = {}
+      vim.lsp.util.convert_input_to_markdown_lines(item.documentation, lines)
+      vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+    end,
+  })
+  local ns = vim.api.nvim_get_namespaces().topos_bible_fences
+  local groups = {}
+  for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(buf, ns, 0, -1, { details = true })) do
+    local token = mark[4].hl_group:match("type%.(%w+)")
+    if token then table.insert(groups, token .. "=" .. vim.api.nvim_buf_get_text(buf, mark[2], mark[3], mark[2], mark[4].end_col, {})[1]) end
+  end
+  log("blink colors", vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1], table.concat(groups, " "))
+end
 -- Go to definition opens the whole book, read-only, at the verse
 vim.lsp.buf.definition()
 vim.wait(5000, function() return vim.api.nvim_buf_get_name(0):find("^topos%-bible://") ~= nil end)

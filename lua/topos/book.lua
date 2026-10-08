@@ -96,12 +96,16 @@ end
 
 local fence_ns = vim.api.nvim_create_namespace('topos_bible_fences')
 
--- Colors the ```topos-bible code blocks in a Markdown buffer (a hover or documentation float)
-function M.color_fences(bufnr)
+-- Colors the ```topos-bible code blocks in a Markdown buffer (a hover or documentation float);
+-- `tokens` is for blocks whose info string has none (completion documentation)
+function M.color_fences(bufnr, tokens)
   local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
   vim.api.nvim_buf_clear_namespace(bufnr, fence_ns, 0, -1)
   for i, line in ipairs(lines) do
     local info = line:match('^%s*```+' .. vim.pesc(M.scheme) .. '%s*(.*)$')
+    if info == '' and tokens then
+      info = tokens
+    end
     -- The block's text as text, not code (ToposBibleText)
     local last = info and i
     while last and lines[last + 1] and not lines[last + 1]:match('^%s*```+%s*$') do
@@ -126,6 +130,19 @@ function M.color_fences(bufnr)
         })
       end
     end
+  end
+end
+
+--[[
+blink.cmp's `completion.documentation.draw`: its own drawing, then the passage colored (from the
+item's `data.tokens`, since blink.cmp shows a code block's info string)
+  completion = { documentation = { draw = function(opts) require('topos').blink_draw(opts) end } }
+]]
+function M.blink_draw(opts)
+  opts.default_implementation()
+  local data = opts.item and opts.item.data
+  if type(data) == 'table' and type(data.tokens) == 'string' then
+    M.color_fences(opts.window:get_buf(), data.tokens)
   end
 end
 

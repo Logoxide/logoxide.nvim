@@ -250,7 +250,15 @@ has no markup. In hover (and completion documentation), a passage is a
 what to color, and the plugin colors the block the same way (its text is
 `ToposBibleText`, Normal's color, rather than a code color). Completion
 documentation is a plain ```topos-bible block, since completion plugins like
-blink.cmp show the first line instead of hiding it.
+blink.cmp show the first line instead of hiding it; the colors are in the
+item's `data.tokens`. To color it in blink.cmp, set its documentation `draw`: >lua
+  completion = {
+    documentation = {
+      draw = function(opts) require('topos').blink_draw(opts) end,
+    },
+  }
+<
+Other items are drawn as usual.
 
 `markup` can also go in ~/.config/topos/config.toml (as `[markup]`, without
 colors), where the server reads it like the other settings.

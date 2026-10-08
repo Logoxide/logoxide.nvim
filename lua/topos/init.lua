@@ -168,6 +168,11 @@ local function apply_edits_command(command, ctx)
   vim.lsp.util.apply_text_edits(edits, ctx.bufnr, client and client.offset_encoding or 'utf-16')
 end
 
+-- For blink.cmp's `completion.documentation.draw`: colors passages in completion documentation
+function M.blink_draw(opts)
+  require('topos.book').blink_draw(opts)
+end
+
 function M.setup(opts)
   config.set(opts)
   require('topos.commands').create()
