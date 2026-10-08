@@ -1,5 +1,6 @@
--- Exercises the plugin in headless Neovim (run by tests/nvim/run.sh, which sets REPO and WORK)
-local REPO, WORK = vim.env.REPO, vim.env.WORK
+-- Exercises the plugin in headless Neovim (run by tests/nvim/run.sh, which sets REPO, TOPOS, and
+-- WORK)
+local REPO, TOPOS, WORK = vim.env.REPO, vim.env.TOPOS, vim.env.WORK
 local out = {}
 local function log(...) table.insert(out, table.concat(vim.tbl_map(tostring, {...}), " ")); vim.fn.writefile(out, WORK .. "/out.txt") end
 local ok, err = xpcall(function()
@@ -9,9 +10,11 @@ if vim.env.WITH_TELESCOPE then
   for _, p in ipairs({ "plenary.nvim", "telescope.nvim" }) do vim.opt.rtp:prepend((vim.env.PLUGINS or vim.fn.expand("~/.local/share/nvim/lazy")) .. "/" .. p) end
 end
 vim.cmd("runtime plugin/topos-bible.lua")
-require("topos").setup({ cmd = { lsp = REPO .. "/target/debug/topos-lsp", cli = REPO .. "/target/debug/topos" }, auto_build = false,
+require("topos").setup({ cmd = { lsp = TOPOS .. "/target/debug/topos-lsp", cli = TOPOS .. "/target/debug/topos" }, auto_build = false,
   -- Server settings, as in a lazy.nvim spec's `opts`
-  settings = { ["reference-diagnostics"] = "hint" } })
+  settings = { ["reference-diagnostics"] = "hint" },
+  bible = WORK .. "/Bibles/BSB",
+  markup = { words_of_jesus = { color = "#ff0000" } } })
 vim.cmd("edit " .. WORK .. "/ws/open.txt")
 vim.wait(5000, function() return #vim.lsp.get_clients({ bufnr = 0, name = "topos" }) > 0 end)
 vim.wait(500)
@@ -65,6 +68,47 @@ if telescope then
   log("telescope ext", results(function() require("telescope").extensions.topos.explicit_overlap({ passage = "Rom 8:28" }) end))
   log("telescope ext query", results(function() require("telescope").extensions.topos.query({ args = '-g "Pauline Epistles"' }) end))
 end
+-- The Bible: the reference's text in hover
+vim.cmd("buffer " .. WORK .. "/ws/open.txt")
+vim.api.nvim_win_set_cursor(0, { 1, 6 })
+do
+  local params = vim.lsp.util.make_position_params(0, client.offset_encoding)
+  local hover = vim.lsp.buf_request_sync(0, "textDocument/hover", params, 5000)
+  local value = ""
+  for _, r in pairs(hover or {}) do value = r.result and r.result.contents.value or value end
+  log("hover text", value:match("\n\n(> [^\n]*)"))
+end
+-- Go to definition opens the whole book, read-only, at the verse
+vim.lsp.buf.definition()
+vim.wait(5000, function() return vim.api.nvim_buf_get_name(0):find("^topos%-bible://") ~= nil end)
+local book = vim.api.nvim_get_current_buf()
+log("book", vim.api.nvim_buf_get_name(book), vim.bo.filetype, vim.bo.modifiable, vim.bo.buftype)
+log("book line", vim.api.nvim_get_current_line())
+local cursor = vim.api.nvim_win_get_cursor(0)
+log("book cursor", cursor[1], cursor[2])
+log("book title", vim.b.topos_book)
+-- Colored by semantic tokens: words of Jesus in `markup`'s color
+vim.wait(5000, function() return #vim.inspect_pos(book, 3, 60).semantic_tokens > 0 end)
+for _, token in ipairs(vim.inspect_pos(book, 3, 60).semantic_tokens) do
+  log("woj", token.opts.hl_group, vim.api.nvim_get_hl(0, { name = token.opts.hl_group }).fg)
+end
+for _, token in ipairs(vim.inspect_pos(book, 3, 1).semantic_tokens) do log("verse number", token.opts.hl_group) end
+-- References from a verse: every reference that names it (open.txt's, a.md's two, and b.txt's)
+do
+  local params = vim.lsp.util.make_position_params(0, client.offset_encoding)
+  params.context = { includeDeclaration = true }
+  local result = vim.lsp.buf_request_sync(book, "textDocument/references", params, 5000) or {}
+  local n = 0
+  for _, r in pairs(result) do n = n + #(r.result or {}) end
+  log("book references", n)
+end
+-- <C-]> (the LSP's tagfunc) opens it too
+vim.cmd("buffer " .. WORK .. "/ws/open.txt")
+vim.api.nvim_win_set_cursor(0, { 1, 6 })
+vim.cmd.normal({ args = { vim.keycode("<C-]>") }, bang = true })
+vim.wait(3000, function() return vim.api.nvim_get_current_buf() == book end)
+log("tag", vim.api.nvim_get_current_buf() == book, vim.api.nvim_win_get_cursor(0)[1])
+vim.cmd("buffer " .. WORK .. "/ws/open.txt")
 -- :ToposLspStart in an unnamed buffer with no file type, then again to restart
 local first = vim.lsp.get_clients({ name = "topos" })[1].id
 vim.cmd("enew")

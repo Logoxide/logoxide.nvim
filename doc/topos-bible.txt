@@ -7,29 +7,35 @@ CONTENTS                                                         *topos-bible*
   2. Commands ..................................... |topos-bible-commands|
   3. Telescope ................................... |topos-bible-telescope|
   4. Language server ................................... |topos-bible-lsp|
+  5. Bible text ....................................... |topos-bible-text|
 
 topos-bible.nvim runs topos-lsp (completion, hover, inlay hints, symbols,
 diagnostics, go-to-references, and search code actions) and searches your
-workspace with the topos CLI. Both are built from the plugin's own checkout.
+workspace with the topos CLI. With a Bible (a folder of USX files), hover
+shows a reference's text and go-to-definition opens the whole book.
 
 ==============================================================================
 1. SETUP                                                   *topos-bible-setup*
 
 With lazy.nvim: >lua
   {
-    'MasterTemple/topos-bible',
-    name = 'topos-bible.nvim',
+    'MasterTemple/topos-bible.nvim',
     main = 'topos',
-    build = 'cargo build --release -p topos-lsp -p topos-bible-cli',
+    build = ':ToposBuild!',
     dependencies = { 'nvim-telescope/telescope.nvim' }, -- optional
     ft = { 'markdown', 'text' },
     cmd = { 'ToposSearch', 'ToposQuery', 'ToposExplicitOverlap', 'ToposAnyOverlap',
             'ToposExactOverlap', 'ToposInside', 'ToposExcludeOverlap', 'ToposBuild', 'ToposLspStart' },
-    opts = { settings = { format = 'abbreviation', ['inlay-hints'] = 'never' } },
+    opts = {
+      bible = '~/Bibles/BSB',
+      settings = { format = 'abbreviation', ['inlay-hints'] = 'never' },
+    },
   }
 <
-Building needs Rust (https://rustup.rs). If the binaries are missing,
-`setup()` builds them (see `auto_build`), or run |:ToposBuild|.
+Building needs Rust (https://rustup.rs): |:ToposBuild| runs `cargo install`
+into the plugin's build/ folder, from the topos repository on GitHub, or from
+a checkout of it (`source`). If the binaries are missing, `setup()` builds
+them (see `auto_build`). Binaries on your PATH work too.
 
 `require('topos').setup(opts)` takes (the defaults): >lua
   {
@@ -38,9 +44,21 @@ Building needs Rust (https://rustup.rs). If the binaries are missing,
     --   ['psg-fmt'] = { join_adjacent = true }, ext = 'md,txt',
     --   ['inlay-hints'] = 'changed' | 'always' | 'osis' | 'never',
     --   ['reference-diagnostics'] = 'info' | 'hint' | 'never',
-    --   hover = { 'name', 'abbreviation', 'osis', 'book', 'testament',
-    --             'genres', 'verses', 'location', 'written', 'bcv' } }
+    --   hover = { 'text', 'name', 'abbreviation', 'osis', 'book',
+    --             'testament', 'genres', 'verses', 'location', 'written',
+    --             'bcv' } }
     settings = {},
+    -- A folder of USX files, one book each (see |topos-bible-text|)
+    bible = nil,
+    -- How Bible text is written and colored (see |topos-bible-markup|)
+    markup = {
+      verse_numbers = { show = true, display = '[{verse}]', color = nil },
+      chapter_numbers = { show = true, display = '{name} {chapter}',
+                          color = nil },
+      words_of_jesus = { show = true, color = nil },
+      headings = { show = true, color = nil },
+      notes = { show = false, color = nil },
+    },
     lsp = {
       enabled = true,
       filetypes = { 'markdown', 'text' },
@@ -52,6 +70,8 @@ Building needs Rust (https://rustup.rs). If the binaries are missing,
     },
     -- Binary paths; nil uses the plugin's build, then your PATH
     cmd = { lsp = nil, cli = nil },
+    -- What :ToposBuild builds: nil for GitHub, or a topos checkout
+    source = nil,
     auto_build = true,
     -- 'auto' (Telescope if installed), 'telescope', or 'quickfix'
     picker = 'auto',
@@ -98,7 +118,9 @@ completed with <Tab> (`John 3:` lists every verse).
 
                                                                  *:ToposBuild*
 :ToposBuild[!]          Builds topos-lsp and topos if they are missing (!
-                        rebuilds), then starts the language server.
+                        rebuilds), then starts the language server. It
+                        runs `cargo install` into the plugin's build/
+                        folder, from GitHub or `source`.
 
 `:checkhealth topos` shows which binaries are used and whether they run.
 
@@ -123,12 +145,57 @@ reference in the workspace that is exactly the one under the cursor. The code
 actions (|gra|) reformat it the way completion writes it (or every reference
 in the file), or search for it by explicit overlap, any overlap, exact
 overlap, or inside it, opening the results like the commands do. Hovering a
-reference shows its full name, abbreviation, OSIS id, book, testament, genres,
+reference shows its text (with a `bible`), full name, abbreviation, OSIS id, book, testament, genres,
 verses, and where it is (`settings.hover` picks which, and their order: the
 default is every one but `written` and `bcv`); hovering a reference that
 doesn't exist says what does (`John 3 has 36 verses`). Each reference has an
 information diagnostic with how it's written in your format (`John 3:16`);
 references that don't exist get a warning. Inlay
 hints show the formatted reference where it's written differently.
+
+==============================================================================
+5. BIBLE TEXT                                               *topos-bible-text*
+
+Set `bible` to a folder of USX files, one book each (`JHN.usx`,
+`44JHNBSB.usx`, or any name with a `<book code>` inside), as Paratext, the
+Digital Bible Library, and eBible.org publish them. The folder's name names
+the Bible. Its files are left out of workspace searches. Then:
+
+- Hovering a reference (|K|) shows the passage's text, with the heading
+  before it.
+- Go to definition (|CTRL-]|, or |vim.lsp.buf.definition()|) opens the whole
+  book at the passage, in a buffer named like `topos-bible://BSB/JHN`. You
+  can also open one with `:edit topos-bible://BSB/JHN`. The buffer can't be
+  changed (its 'filetype' is `topos-bible`, and it wraps long paragraphs).
+- In that buffer, go to references (|grr|) on a verse lists every reference
+  that names it in your workspace (explicit overlap: `John 3` doesn't count
+  for John 3:16); on a chapter's label, every reference that shares a verse
+  with the chapter.
+
+                                                          *topos-bible-markup*
+`markup` says how the text is written and colored. Each kind of element has
+`show`, and labels have `display`, a template with `{verse}` (`16`, or `4-5`
+for a bridge), `{chapter}`, `{name}` (`John`), and `{book}` (`JHN`): >lua
+  markup = {
+    verse_numbers = { show = true, color = 'blue', display = '[{verse}]' },
+    chapter_numbers = { display = 'Chapter {chapter}' },
+    words_of_jesus = { color = 'red' },     -- show = false: not colored
+    headings = { show = false },
+    notes = { show = true, color = { fg = 'gray', italic = true } },
+  }
+<
+`color` is a color name or `'#rrggbb'`, or a highlight definition (see
+|nvim_set_hl()|). Without one, each links to a group of your colorscheme:
+
+  Element           Highlight group                        Default link
+  verse_numbers     @lsp.type.verseNumber.topos-bible      |hl-Number|
+  chapter_numbers   @lsp.type.chapterNumber.topos-bible    |hl-Title|
+  words_of_jesus    @lsp.type.wordsOfJesus.topos-bible     DiagnosticError
+  headings          @lsp.type.heading.topos-bible          |hl-Title|
+  notes             @lsp.type.note.topos-bible             |hl-Comment|
+
+The colors come from topos-lsp's semantic tokens, so the text itself has no
+markup. `markup` can also go in ~/.config/topos/config.toml (as `[markup]`,
+without colors), where the server reads it like the other settings.
 
  vim:tw=78:ts=8:ft=help:norl:

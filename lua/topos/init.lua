@@ -171,6 +171,7 @@ end
 function M.setup(opts)
   config.set(opts)
   require('topos.commands').create()
+  require('topos.book').setup()
   vim.lsp.commands['topos.search'] = search_command
   vim.lsp.commands['topos.applyEdits'] = apply_edits_command
   local ok, telescope = pcall(require, 'telescope')

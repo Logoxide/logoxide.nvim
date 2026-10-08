@@ -20,6 +20,14 @@ function M.check()
   else
     vim.health.warn('cargo not found: :ToposBuild needs Rust (https://rustup.rs)')
   end
+  local bible = config.lsp_settings().bible
+  if not bible then
+    vim.health.info('No Bible: set `bible` to a folder of USX files for passage text and go-to-definition')
+  elseif #vim.fn.glob(vim.fs.joinpath(bible, '*.[uU][sS][xX]'), false, true) > 0 then
+    vim.health.ok('Bible: ' .. bible)
+  else
+    vim.health.error('Bible: no USX files in ' .. bible)
+  end
   if pcall(require, 'telescope') then
     vim.health.ok('Telescope: results open in its pickers')
   else

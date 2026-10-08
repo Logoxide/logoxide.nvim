@@ -5,15 +5,20 @@ local M = {}
 
 local exe = vim.fn.has('win32') == 1 and '.exe' or ''
 
--- The repository this plugin was installed from (it has the Rust sources to build)
+-- The plugin's folder
 function M.root()
   local source = debug.getinfo(1, 'S').source:sub(2)
   return vim.fn.fnamemodify(source, ':p:h:h:h')
 end
 
--- The plugin's build of `name`, like target/release/topos-lsp
+-- Where :ToposBuild installs the binaries (`cargo install --root`)
+function M.build_root()
+  return vim.fs.joinpath(M.root(), 'build')
+end
+
+-- The plugin's build of `name`, like build/bin/topos-lsp
 function M.built(name)
-  return vim.fs.joinpath(M.root(), 'target', 'release', name .. exe)
+  return vim.fs.joinpath(M.build_root(), 'bin', name .. exe)
 end
 
 -- The binary to run for 'lsp' (topos-lsp) or 'cli' (topos), or nil if there is none
