@@ -78,6 +78,30 @@ local commands = {
     end,
     { desc = 'Start topos-lsp for this buffer (whatever its file type), or restart it' },
   },
+  ToposBible = {
+    function(opts)
+      require('topos.bibles').set_default(opts.args)
+    end,
+    {
+      nargs = '?',
+      complete = function()
+        return require('topos.bibles').names()
+      end,
+      desc = 'The Bible references use when they name none (choose one without a name)',
+    },
+  },
+  ToposParallel = {
+    function(opts)
+      require('topos.bibles').parallel(opts.args, opts.mods)
+    end,
+    {
+      nargs = '?',
+      complete = function()
+        return require('topos.bibles').names()
+      end,
+      desc = 'This whole book in another Bible, side by side on the same verse',
+    },
+  },
   ToposBuild = {
     function(opts)
       require('topos.build').build(opts.bang, function(ok)

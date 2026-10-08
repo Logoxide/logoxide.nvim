@@ -50,6 +50,15 @@ them (see `auto_build`). Binaries on your PATH work too.
     settings = {},
     -- A folder of USX files, one book each (see |topos-bible-text|)
     bible = nil,
+    -- More Bibles by name: { KJV = '~/Bibles/KJV' } or
+    -- { KJV = { path = '~/Bibles/KJV', aliases = { 'AV' } } }
+    -- (see |topos-bible-translations|)
+    bibles = {},
+    -- The Bible for references that name none: `bible`'s, else the first
+    -- of `bibles` by name (|:ToposBible| changes it)
+    default_bible = nil,
+    -- Bibles whose text hover also shows, like { 'BSB', 'KJV' }
+    hover_bibles = nil,
     -- How Bible text is written and colored (see |topos-bible-markup|)
     markup = {
       verse_numbers = { show = true, display = '[{verse}]' },
@@ -121,6 +130,20 @@ completed with <Tab> (`John 3:` lists every verse).
                         route diagnostics to an unnamed buffer, so the plugin
                         asks for them itself as you edit.
 
+                                                                 *:ToposBible*
+:ToposBible [name]      References that name no Bible use this one (a name
+                        or alias from `bible` and `bibles`; without one,
+                        choose with |vim.ui.select()|). It lasts until
+                        Neovim quits; `default_bible` sets it for good.
+
+                                                              *:ToposParallel*
+:ToposParallel [name]   In a whole book (`topos-bible://BSB/JHN`), opens the
+                        same book in another Bible in a split, at the verse
+                        under the cursor, and keeps the two on the same verse
+                        as either cursor moves. Takes a modifier for the
+                        split (`:horizontal ToposParallel KJV`; vertical by
+                        default).
+
                                                                  *:ToposBuild*
 :ToposBuild[!]          Builds topos-lsp and topos if they are missing (!
                         rebuilds), then starts the language server. It
@@ -180,6 +203,21 @@ the Bible. Its files are left out of workspace searches. Then:
   with the chapter. Hovering a verse there says how many references name it,
   and in how many files (`???` if searching takes more than half a second;
   what was read is cached, so hovering again gets further).
+
+                                                    *topos-bible-translations*
+Several Bibles: `bible` (named after its folder) and `bibles` (named by their
+keys, with `aliases`) are translations. A reference followed by one's name or
+alias, ignoring case (`John 3:16 KJV`, `John 3:16, KJV`, `John 3:16 (AV)`),
+uses that Bible; other references use `default_bible`. Then:
+
+- Hover (on the reference or the name) shows that Bible's text, then the
+  `hover_bibles`; with several Bibles, each text is labeled with its name.
+- Go to definition opens its book (`topos-bible://KJV/JHN`).
+- Completion offers the names after a reference (`John 3:16 K` gives `KJV`).
+- The reference is checked against that Bible's own verse counts (read from
+  its USX), and a warning names it: `John 3:17 does not exist in the KJV`.
+- Insertions use it; a reference that names none offers one per Bible
+  (`Insert Callout (KJV)`), and `{bible}` in `display` is the Bible's name.
 
                                                           *topos-bible-markup*
 `markup` says how Bible text is written and colored, in whole books, hover,

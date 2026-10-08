@@ -14,6 +14,7 @@ require("topos").setup({ cmd = { lsp = TOPOS .. "/target/debug/topos-lsp", cli =
   -- Server settings, as in a lazy.nvim spec's `opts`
   settings = { ["reference-diagnostics"] = "hint" },
   bible = WORK .. "/Bibles/BSB",
+  bibles = { KJV = { path = WORK .. "/Bibles/KJV", aliases = { "AV" } } },
   markup = { words_of_jesus = { color = "#ff0000" }, verse_numbers = { highlight = "Special" } },
   insertions = { { name = "Callout", display = "> [!bible] {reference}\n{text}", line_prefix = "> " } } })
 vim.cmd("edit " .. WORK .. "/ws/open.txt")
@@ -169,11 +170,71 @@ do
   params.context = { diagnostics = {} }
   for _, r in pairs(vim.lsp.buf_request_sync(0, "textDocument/codeAction", params, 5000) or {}) do
     for _, a in ipairs(r.result or {}) do
-      if a.title == "Insert Callout" then vim.lsp.util.apply_workspace_edit(a.edit, client.offset_encoding) end
+      -- With several Bibles, an insertion per Bible
+      if a.title == "Insert Callout (BSB)" then vim.lsp.util.apply_workspace_edit(a.edit, client.offset_encoding) end
     end
   end
   log("callout", table.concat(vim.api.nvim_buf_get_lines(0, 1, 4, false), "|"))
 end
+-- Several Bibles: a reference followed by a Bible's name uses it; :ToposBible sets the default
+do
+  log("bibles", table.concat(require("topos.bibles").names(), "|"))
+  -- Written now, so the workspace searches above don't count it
+  vim.fn.writefile({ "Read John 3:16 KJV", "and John 3:16", "John 3:17 AV" }, WORK .. "/ws/kjv.txt")
+  vim.cmd("edit " .. WORK .. "/ws/kjv.txt")
+  vim.wait(5000, function() return #vim.lsp.get_clients({ bufnr = 0, name = "topos" }) > 0 end)
+  local function hover(line, col)
+    vim.api.nvim_win_set_cursor(0, { line, col })
+    local params = vim.lsp.util.make_position_params(0, client.offset_encoding)
+    local value = ""
+    for _, r in pairs(vim.lsp.buf_request_sync(0, "textDocument/hover", params, 5000) or {}) do
+      value = r.result and r.result.contents.value or value
+    end
+    return value
+  end
+  local named = hover(1, 6)
+  log("named hover", named:match("^[^\n]*"), named:match("that he gave"))
+  log("default hover", hover(2, 6):match("\n(%*%u+%*)\n"))
+  vim.wait(3000, function() return #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.WARN }) > 0 end)
+  for _, d in ipairs(vim.diagnostic.get(0, { severity = vim.diagnostic.severity.WARN })) do
+    log("missing in KJV", d.message)
+  end
+  vim.cmd("ToposBible AV")
+  vim.wait(3000, function() return hover(2, 6):find("*KJV*", 1, true) ~= nil end)
+  log("set default hover", hover(2, 6):match("\n(%*%u+%*)\n"))
+  vim.cmd("ToposBible BSB")
+  vim.wait(3000, function() return hover(2, 6):find("*BSB*", 1, true) ~= nil end)
+end
+-- :ToposParallel: the KJV's John next to the BSB's, on the same verse
+do
+  vim.cmd("edit topos-bible://BSB/JHN")
+  local bsb_win = vim.api.nvim_get_current_win()
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local row
+  for i, l in ipairs(lines) do if l:find("^%[16%]") then row = i end end
+  vim.api.nvim_win_set_cursor(0, { row, 0 })
+  vim.cmd("ToposParallel KJV")
+  vim.wait(5000, function() return vim.api.nvim_buf_get_name(0):find("KJV") ~= nil end)
+  local kjv_win = vim.api.nvim_get_current_win()
+  log("parallel", vim.api.nvim_buf_get_name(0), vim.api.nvim_get_current_line())
+  -- Moving in the BSB moves the KJV: John 4's label, which the KJV lacks, goes to its start,
+  -- and the chapter label goes to the KJV's
+  vim.api.nvim_set_current_win(bsb_win)
+  for i, l in ipairs(lines) do if l == "John 3" then row = i end end
+  vim.api.nvim_win_set_cursor(bsb_win, { row, 0 })
+  vim.api.nvim_exec_autocmds("CursorMoved", {})
+  vim.wait(3000, function()
+    local kjv = vim.api.nvim_win_get_buf(kjv_win)
+    local at = vim.api.nvim_win_get_cursor(kjv_win)[1]
+    return vim.api.nvim_buf_get_lines(kjv, at - 1, at, false)[1] == "John 3"
+  end)
+  local at = vim.api.nvim_win_get_cursor(kjv_win)[1]
+  log("parallel follows", vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(kjv_win), at - 1, at, false)[1])
+  vim.api.nvim_win_close(kjv_win, true)
+  -- The next run (with Telescope) uses the same workspace
+  os.remove(WORK .. "/ws/kjv.txt")
+end
+vim.cmd("buffer " .. WORK .. "/ws/open.txt")
 -- :ToposLspStart in an unnamed buffer with no file type, then again to restart
 local first = vim.lsp.get_clients({ name = "topos" })[1].id
 vim.cmd("enew")
@@ -221,6 +282,14 @@ vim.cmd("buffer " .. open)
 vim.cmd("checkhealth topos")
 local health = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
 log("health ok", select(2, health:gsub("OK", "")), "errors", select(2, health:gsub("ERROR", "")))
+-- Each Bible's folder is checked
+do
+  local health, oks = vim.health, 0
+  vim.health = setmetatable({ ok = function(m) if m:find("^Bible ") then oks = oks + 1 end end }, { __index = function() return function() end end })
+  require("topos.health").check()
+  vim.health = health
+  log("health bibles", oks)
+end
 end, debug.traceback)
 if not ok then log("ERROR", err) end
 vim.cmd("qa!")

@@ -20,13 +20,25 @@ function M.check()
   else
     vim.health.warn('cargo not found: :ToposBuild needs Rust (https://rustup.rs)')
   end
-  local bible = config.lsp_settings().bible
-  if not bible then
-    vim.health.info('No Bible: set `bible` to a folder of USX files for passage text and go-to-definition')
-  elseif #vim.fn.glob(vim.fs.joinpath(bible, '*.[uU][sS][xX]'), false, true) > 0 then
-    vim.health.ok('Bible: ' .. bible)
-  else
-    vim.health.error('Bible: no USX files in ' .. bible)
+  local settings = config.lsp_settings()
+  local folders = {}
+  if settings.bible then
+    table.insert(folders, { vim.fn.fnamemodify(settings.bible, ':t'), settings.bible })
+  end
+  for name, bible in pairs(settings.bibles or {}) do
+    table.insert(folders, { name, type(bible) == 'table' and bible.path or bible })
+  end
+  if #folders == 0 then
+    vim.health.info('No Bible: set `bible` (or `bibles`) to a folder of USX files for passage text and go-to-definition')
+  end
+  for _, folder in ipairs(folders) do
+    local name, path = folder[1], folder[2]
+    local books = #vim.fn.glob(vim.fs.joinpath(path, '*.[uU][sS][xX]'), false, true)
+    if books > 0 then
+      vim.health.ok(('Bible %s: %s (%d books)'):format(name, path, books))
+    else
+      vim.health.error(('Bible %s: no USX files in %s'):format(name, path))
+    end
   end
   if pcall(require, 'telescope') then
     vim.health.ok('Telescope: results open in its pickers')

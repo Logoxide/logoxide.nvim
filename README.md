@@ -15,11 +15,15 @@ With [lazy.nvim](https://lazy.folke.io):
   dependencies = { 'nvim-telescope/telescope.nvim' }, -- optional
   ft = { 'markdown', 'text' },
   cmd = { 'ToposSearch', 'ToposQuery', 'ToposExplicitOverlap', 'ToposAnyOverlap',
-          'ToposExactOverlap', 'ToposInside', 'ToposExcludeOverlap', 'ToposBuild', 'ToposLspStart' },
+          'ToposExactOverlap', 'ToposInside', 'ToposExcludeOverlap', 'ToposBuild', 'ToposLspStart',
+          'ToposBible', 'ToposParallel' },
   opts = {
     -- A folder of USX files, one book each (JHN.usx): hover shows the text, and go to
     -- definition opens the whole book
     bible = '~/Bibles/BSB',
+    -- More Bibles: a reference followed by one's name (John 3:16 KJV) uses it
+    bibles = { KJV = { path = '~/Bibles/KJV', aliases = { 'AV' } } },
+    hover_bibles = { 'KJV' }, -- hover shows the KJV too
     -- How it is written and colored (see :help topos-bible-markup for every key)
     markup = {
       verse_numbers = { show = true, color = 'blue', display = '[{verse}]' },
@@ -55,6 +59,10 @@ With [lazy.nvim](https://lazy.folke.io):
   the whole book in a read-only buffer at the passage, with verse numbers, chapters, headings,
   words of Jesus, and so on written and colored the way `markup` says. Go to references on a
   verse there lists every reference to it in your notes, and hovering it counts them
+- **Several Bibles**: with `bibles`, a reference followed by a Bible's name (`John 3:16 KJV`)
+  uses that Bible for hover, go to definition, completion, insertions, and its own verse counts;
+  `:ToposBible KJV` changes the default, and `:ToposParallel KJV` opens the same book in another
+  Bible next to the current one, kept on the same verse
 - **Insertions**: code actions that write a passage below its reference (like an Obsidian
   callout), in place of its line, or in place of the reference
 - **Commands**: `:ToposSearch` (every reference), `:ToposQuery -g Wisdom` (the CLI's options,

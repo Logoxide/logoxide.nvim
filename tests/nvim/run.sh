@@ -25,6 +25,14 @@ cat > "$WORK/Bibles/BSB/JHN.usx" <<'USX'
 <para style="p"><verse number="16" style="v" sid="JHN 3:16"/>For God so loved the world. <verse eid="JHN 3:16"/><verse number="17" style="v" sid="JHN 3:17"/>Jesus said, <char style="wj">I did not come to condemn.</char><verse eid="JHN 3:17"/></para>
 <chapter eid="JHN 3"/></usx>
 USX
+# Another Bible, named KJV (alias AV) in `bibles`, with only John 3:16
+mkdir -p "$WORK/Bibles/KJV"
+cat > "$WORK/Bibles/KJV/JHN.usx" <<'USX'
+<usx version="3.0"><book code="JHN" style="id">x</book>
+<chapter number="3" style="c" sid="JHN 3"/>
+<para style="p"><verse number="16" style="v" sid="JHN 3:16"/>For God so loved the world, that he gave his only begotten Son.<verse eid="JHN 3:16"/></para>
+<chapter eid="JHN 3"/></usx>
+USX
 
 expected='lsp topos hints true
 diagnostic HINT reference John 3:16
@@ -66,6 +74,10 @@ check() {
     'book line [16] For God so loved the world. [17] Jesus said, I did not come to condemn.' \
     'book cursor 4 0' 'book title John' 'woj @lsp.type.wordsOfJesus.topos-bible 16711680' \
     'verse number @lsp.type.verseNumber.topos-bible Special' 'book references 4' 'tag true 4' \
+    'bibles BSB|KJV' 'named hover **John 3:16** (KJV) that he gave' 'default hover *BSB*' \
+    'missing in KJV John 3:17 does not exist in the KJV' 'set default hover *KJV*' \
+    'parallel topos-bible://KJV/JHN [16] For God so loved the world, that he gave his only begotten Son.' \
+    'parallel follows John 3' 'health bibles 2' \
     'unnamed before 0' 'unnamed after 1 John 3:16' 'unnamed reformat Read John 3:16 today' 'unnamed edited Romans 8:28' 'restarted 1 true true true'; do
     if ! grep -qxF "$line" <<<"$output"; then
       echo "FAIL ($name): expected '$line'"
