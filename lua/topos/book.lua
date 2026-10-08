@@ -1,7 +1,7 @@
 --[[
 Whole books of the `bible` option as read-only buffers, named like `topos-bible://BSB/JHN`.
 Go-to-definition on a reference opens one at the passage; `:edit topos-bible://BSB/JHN` works too.
-topos-lsp renders the book (with `markup`'s labels) and colors it with semantic tokens, which
+biblix-lsp renders the book (with `markup`'s labels) and colors it with semantic tokens, which
 `markup`'s colors set; references from a verse list every reference to it in the workspace.
 
 Passages in hover (and completion documentation) are ```topos-bible code blocks whose info
@@ -26,7 +26,7 @@ M.highlights = {
   quotes = { 'quote', '@markup.quote' },
 }
 
--- The token types in topos-lsp's order (the numbers in a code block's info string)
+-- The token types in biblix-lsp's order (the numbers in a code block's info string)
 M.legend = { 'verseNumber', 'chapterNumber', 'wordsOfJesus', 'heading', 'note', 'added', 'divineName', 'quote' }
 
 -- The highlight group for a token type in book buffers
@@ -56,7 +56,7 @@ function M.apply_highlights()
   end
 end
 
--- The topos-lsp client to ask: the one in the buffer we came from, else any
+-- The biblix-lsp client to ask: the one in the buffer we came from, else any
 local function client_for(bufnr)
   local previous = vim.fn.bufnr('#')
   if previous > 0 and previous ~= bufnr then
@@ -72,7 +72,7 @@ end
 function M.read(bufnr, uri)
   local client = client_for(bufnr)
   if not client then
-    return vim.notify('topos: topos-lsp is not running, so it can\'t open ' .. uri, vim.log.levels.ERROR)
+    return vim.notify('topos: biblix-lsp is not running, so it can\'t open ' .. uri, vim.log.levels.ERROR)
   end
   local response, err = client:request_sync('topos/book', { uri = uri }, 10000, bufnr)
   if not response or response.err then

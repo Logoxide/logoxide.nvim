@@ -1,8 +1,8 @@
 # topos-bible.nvim
 
 Find, search, and complete Bible references in your notes, and read the passages they point to.
-It runs [topos](https://github.com/MasterTemple/topos-bible)'s language server (`topos-lsp`)
-and searches with its CLI (`topos`).
+It runs biblix's language server (`biblix-lsp`, which was [topos](https://github.com/MasterTemple/topos-bible)'s `topos-lsp`)
+and searches with topos's CLI (`topos`).
 
 With [lazy.nvim](https://lazy.folke.io):
 
@@ -10,7 +10,7 @@ With [lazy.nvim](https://lazy.folke.io):
 {
   'MasterTemple/topos-bible.nvim',
   main = 'topos',
-  -- Builds topos-lsp and topos with Cargo (needs Rust: https://rustup.rs)
+  -- Builds biblix-lsp and topos with Cargo (needs Rust: https://rustup.rs)
   build = ':ToposBuild!',
   dependencies = { 'nvim-telescope/telescope.nvim' }, -- optional
   ft = { 'markdown', 'text' },
@@ -38,7 +38,7 @@ With [lazy.nvim](https://lazy.folke.io):
       -- replace = 'line' (the reference's line), 'inline' (just the reference), or nil (below)
       { name = 'Quote', replace = 'inline', display = '“{text}” ({reference})' },
     },
-    -- topos-lsp's settings: the CLI's config.toml keys, which these override
+    -- biblix-lsp's settings: the CLI's config.toml keys, which these override
     settings = {
       format = 'name',                        -- or 'abbreviation' for Jn 3:16
       ['psg-fmt'] = { join_adjacent = true }, -- 3:16-18, not 3:16,17,18
@@ -86,16 +86,18 @@ The plugin and the CLI share `~/.config/topos/config.toml`. See `:help topos-bib
 
 ## Building
 
-`:ToposBuild` installs `topos-lsp` and `topos` into the plugin's `build/` folder with
-`cargo install`, from the topos repository on GitHub, or from a checkout of it if you set
-`source = '~/path/to/topos'`. Binaries on your `PATH` work too, and `cmd = { lsp = ..., cli = ... }`
+`:ToposBuild` installs `biblix-lsp` (from biblix) and `topos` (from topos) into the plugin's
+`build/` folder with `cargo install`, from checkouts if you set `source = '~/path/to/topos'` (with
+biblix beside it) or `source = { topos = ..., biblix = ... }`, else from GitHub. biblix-lsp
+can't be installed from GitHub until biblix is published, so use checkouts for now. Binaries on your `PATH` work too, and `cmd = { lsp = ..., cli = ... }`
 picks them yourself.
 
 ## Tests
 
 `tests/nvim/run.sh` tests the plugin in headless Neovim, with the quickfix list and with
-Telescope if it is installed. It builds the binaries from a topos checkout: `TOPOS`, by default
-`../../rust/topos`.
+Telescope if it is installed. It builds `topos` from a topos checkout (`TOPOS`, by default
+`../../rust/topos`) and `biblix-lsp` from a biblix checkout (`BIBLIX`, by default
+`../../rust/biblix`).
 
 <details>
 <summary>Screenshots</summary>

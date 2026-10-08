@@ -1,6 +1,6 @@
--- Exercises the plugin in headless Neovim (run by tests/nvim/run.sh, which sets REPO, TOPOS, and
--- WORK)
-local REPO, TOPOS, WORK = vim.env.REPO, vim.env.TOPOS, vim.env.WORK
+-- Exercises the plugin in headless Neovim (run by tests/nvim/run.sh, which sets REPO, TOPOS,
+-- BIBLIX, and WORK)
+local REPO, TOPOS, BIBLIX, WORK = vim.env.REPO, vim.env.TOPOS, vim.env.BIBLIX, vim.env.WORK
 local out = {}
 local function log(...) table.insert(out, table.concat(vim.tbl_map(tostring, {...}), " ")); vim.fn.writefile(out, WORK .. "/out.txt") end
 local ok, err = xpcall(function()
@@ -10,7 +10,7 @@ if vim.env.WITH_TELESCOPE then
   for _, p in ipairs({ "plenary.nvim", "telescope.nvim" }) do vim.opt.rtp:prepend((vim.env.PLUGINS or vim.fn.expand("~/.local/share/nvim/lazy")) .. "/" .. p) end
 end
 vim.cmd("runtime plugin/topos-bible.lua")
-require("topos").setup({ cmd = { lsp = TOPOS .. "/target/debug/topos-lsp", cli = TOPOS .. "/target/debug/topos" }, auto_build = false,
+require("topos").setup({ cmd = { lsp = BIBLIX .. "/target/debug/biblix-lsp", cli = TOPOS .. "/target/debug/topos" }, auto_build = false,
   -- Server settings, as in a lazy.nvim spec's `opts`
   settings = { ["reference-diagnostics"] = "hint" },
   bible = WORK .. "/Bibles/BSB",

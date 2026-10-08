@@ -76,7 +76,7 @@ local commands = {
     function()
       require('topos').lsp_start()
     end,
-    { desc = 'Start topos-lsp for this buffer (whatever its file type), or restart it' },
+    { desc = 'Start biblix-lsp for this buffer (whatever its file type), or restart it' },
   },
   ToposBible = {
     function(opts)
@@ -110,7 +110,7 @@ local commands = {
         end
       end)
     end,
-    { bang = true, desc = 'Build topos-lsp and topos (! rebuilds)' },
+    { bang = true, desc = 'Build biblix-lsp and topos (! rebuilds)' },
   },
 }
 

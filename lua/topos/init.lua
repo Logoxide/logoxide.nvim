@@ -30,7 +30,7 @@ local function lsp_config(path)
   }
 end
 
--- Configures and enables topos-lsp (once its binary exists)
+-- Configures and enables biblix-lsp (once its binary exists)
 function M.start_lsp()
   local lsp = config.options.lsp
   local path = bin.path('lsp')
@@ -114,14 +114,14 @@ local function unnamed_diagnostics(bufnr, client)
 end
 
 --[[
-:ToposLspStart: restarts topos-lsp if it is running, or starts it for the current buffer even
+:ToposLspStart: restarts biblix-lsp if it is running, or starts it for the current buffer even
 if its file type isn't one of `lsp.filetypes` (or it has no name). A restart re-attaches every
 buffer the server had, plus the current one.
 ]]
 function M.lsp_start()
   local path = bin.path('lsp')
   if not path then
-    return vim.notify('topos: topos-lsp is not built yet; run :ToposBuild', vim.log.levels.ERROR)
+    return vim.notify('topos: biblix-lsp is not built yet; run :ToposBuild', vim.log.levels.ERROR)
   end
   local buffers = { [vim.api.nvim_get_current_buf()] = true }
   local running = vim.lsp.get_clients({ name = 'topos' })
@@ -157,7 +157,7 @@ function M.lsp_start()
       end
     end
   end
-  vim.notify(('topos: %s topos-lsp'):format(#running > 0 and 'restarted' or 'started'))
+  vim.notify(('topos: %s biblix-lsp'):format(#running > 0 and 'restarted' or 'started'))
 end
 
 -- Reformat actions in unnamed buffers carry their edits, for the buffer they came from (an
@@ -195,7 +195,7 @@ function M.setup(opts)
       end
     end)
   else
-    vim.notify('topos: topos-lsp is not built; run :ToposBuild', vim.log.levels.WARN)
+    vim.notify('topos: biblix-lsp is not built; run :ToposBuild', vim.log.levels.WARN)
   end
 end
 

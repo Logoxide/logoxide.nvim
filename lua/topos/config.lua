@@ -2,7 +2,7 @@
 local M = {}
 
 M.defaults = {
-  -- topos-lsp's settings, overriding ~/.config/topos/config.toml (the CLI's keys), like
+  -- biblix-lsp's settings, overriding ~/.config/topos/config.toml (the CLI's keys), like
   -- { format = 'abbreviation', ['psg-fmt'] = { join_adjacent = true },
   --   ['inlay-hints'] = 'never', ['reference-diagnostics'] = 'hint', ext = 'md,txt',
   --   hover = { 'osis', 'book', 'genres', 'verses' } }
@@ -68,7 +68,9 @@ M.defaults = {
   },
   -- Paths to the binaries; nil uses the plugin's own build, then your PATH
   cmd = { lsp = nil, cli = nil },
-  -- What :ToposBuild builds: nil for the topos repository on GitHub, or a topos checkout
+  -- What :ToposBuild builds from: a topos checkout ('~/src/topos', with biblix beside it), or
+  -- { topos = '~/src/topos', biblix = '~/src/biblix' }; nil for GitHub (biblix-lsp can't be
+  -- installed from GitHub until biblix is published, so set a biblix checkout for now)
   source = nil,
   -- Build the binaries when setup can't find them (takes a few minutes the first time)
   auto_build = true,

@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 # Tests topos-bible.nvim in headless Neovim: once with the quickfix list, and once with Telescope
 # if it is installed (PLUGINS is the folder with plenary.nvim and telescope.nvim; lazy.nvim's by
-# default). The binaries are built from a topos checkout: TOPOS, by default ../../rust/topos
+# default). The binaries are built from checkouts: topos from TOPOS (default ../../rust/topos) and
+# biblix-lsp from BIBLIX (default ../../rust/biblix), next to this repository in ~/Development
 # (next to this repository in ~/Development). Run from anywhere: tests/nvim/run.sh
 set -euo pipefail
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
 TOPOS=$(cd "${TOPOS:-$REPO/../../rust/topos}" && pwd)
+BIBLIX=$(cd "${BIBLIX:-$REPO/../../rust/biblix}" && pwd)
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
-cargo build -q --manifest-path "$TOPOS/Cargo.toml" -p topos-lsp -p topos-bible-cli
+cargo build -q --manifest-path "$TOPOS/Cargo.toml" -p topos-bible-cli
+cargo build -q --manifest-path "$BIBLIX/Cargo.toml" -p biblix-lsp
 
 mkdir -p "$WORK/ws/.git" "$WORK/ws/My Notes" "$WORK/config" "$WORK/cache"
 printf 'Jn 3:16 again\nand John 3:14-18\n' > "$WORK/ws/My Notes/a.md"
@@ -49,7 +52,7 @@ reformat Reformat as "John 3:16" See John 3:16 here'
 
 run() {
   rm -f "$WORK/out.txt"
-  (cd "$WORK/ws" && env REPO="$REPO" TOPOS="$TOPOS" WORK="$WORK" "$@" timeout 120 nvim --clean --headless -c "luafile $REPO/tests/nvim/test.lua" >/dev/null 2>&1) || true
+  (cd "$WORK/ws" && env REPO="$REPO" TOPOS="$TOPOS" BIBLIX="$BIBLIX" WORK="$WORK" "$@" timeout 120 nvim --clean --headless -c "luafile $REPO/tests/nvim/test.lua" >/dev/null 2>&1) || true
   cat "$WORK/out.txt"
 }
 

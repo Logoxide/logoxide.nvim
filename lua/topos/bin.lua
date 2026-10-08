@@ -16,18 +16,18 @@ function M.build_root()
   return vim.fs.joinpath(M.root(), 'build')
 end
 
--- The plugin's build of `name`, like build/bin/topos-lsp
+-- The plugin's build of `name`, like build/bin/biblix-lsp
 function M.built(name)
   return vim.fs.joinpath(M.build_root(), 'bin', name .. exe)
 end
 
--- The binary to run for 'lsp' (topos-lsp) or 'cli' (topos), or nil if there is none
+-- The binary to run for 'lsp' (biblix-lsp) or 'cli' (topos), or nil if there is none
 function M.path(kind)
   local configured = config.options.cmd[kind]
   if configured then
     return vim.fn.executable(configured) == 1 and configured or nil
   end
-  local name = kind == 'lsp' and 'topos-lsp' or 'topos'
+  local name = kind == 'lsp' and 'biblix-lsp' or 'topos'
   local built = M.built(name)
   if vim.fn.executable(built) == 1 then
     return built

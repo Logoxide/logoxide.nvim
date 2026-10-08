@@ -1,25 +1,50 @@
--- Building topos-lsp and topos (the CLI) with Cargo, from GitHub or a topos checkout (`source`)
+-- Building biblix-lsp (the language server, from biblix) and topos (the CLI, from topos) with
+-- Cargo, from checkouts (`source`) or GitHub
 local bin = require('topos.bin')
 local config = require('topos.config')
 
 local M = {}
 
-M.repository = 'https://github.com/MasterTemple/topos-bible'
+M.repositories = {
+  topos = 'https://github.com/MasterTemple/topos-bible',
+  biblix = 'https://github.com/MasterTemple/biblix',
+}
+
+-- The checkouts to build from: `source` is a topos checkout, or { topos = ..., biblix = ... };
+-- biblix defaults to `biblix` beside topos (where it finds topos)
+function M.sources()
+  local source = config.options.source
+  if type(source) == 'string' then
+    source = { topos = source }
+  end
+  source = source or {}
+  local topos = source.topos and vim.fn.expand(source.topos)
+  local biblix = source.biblix and vim.fn.expand(source.biblix)
+  if not biblix and topos then
+    biblix = vim.fs.joinpath(vim.fs.dirname(vim.fs.normalize(topos)), 'biblix')
+  end
+  if biblix and not vim.uv.fs_stat(biblix) then
+    biblix = nil
+  end
+  return topos, biblix
+end
 
 -- The commands to run in order: `cargo install` into the plugin's build/ folder
 function M.commands()
   local root = bin.build_root()
-  local source = config.options.source
-  if not source then
-    return { { 'cargo', 'install', '--git', M.repository, '--root', root, 'topos-lsp', 'topos-bible-cli' } }
+  local topos, biblix = M.sources()
+  -- A checkout's own target folder, so a rebuild only builds what changed
+  local function install(checkout, crate)
+    local path = vim.fs.joinpath(checkout, 'crates', crate)
+    return { 'cargo', 'install', '--path', path, '--root', root, '--target-dir', vim.fs.joinpath(checkout, 'target') }
   end
-  source = vim.fn.expand(source)
-  -- The checkout's own target folder, so a rebuild only builds what changed
-  local function install(crate)
-    local path = vim.fs.joinpath(source, 'crates', crate)
-    return { 'cargo', 'install', '--path', path, '--root', root, '--target-dir', vim.fs.joinpath(source, 'target') }
+  local function from_git(repository, package)
+    return { 'cargo', 'install', '--git', repository, '--root', root, package }
   end
-  return { install('topos-lsp'), install('topos-cli') }
+  return {
+    biblix and install(biblix, 'biblix-lsp') or from_git(M.repositories.biblix, 'biblix-lsp'),
+    topos and install(topos, 'topos-cli') or from_git(M.repositories.topos, 'topos-bible-cli'),
+  }
 end
 
 -- Runs the commands one after another, then `done(ok, stderr)`
@@ -47,12 +72,17 @@ function M.build(force, done)
     vim.notify('topos: building needs Rust (https://rustup.rs)', vim.log.levels.ERROR)
     return done(false)
   end
-  local from = config.options.source and vim.fn.expand(config.options.source) or M.repository
-  vim.notify(('topos: building topos-lsp and topos from %s (this takes a few minutes the first time)...'):format(from))
+  local topos, biblix = M.sources()
+  vim.notify(
+    ('topos: building biblix-lsp from %s and topos from %s (this takes a few minutes the first time)...'):format(
+      biblix or M.repositories.biblix,
+      topos or M.repositories.topos
+    )
+  )
   run(M.commands(), function(ok, stderr)
     vim.schedule(function()
       if ok then
-        vim.notify('topos: built topos-lsp and topos')
+        vim.notify('topos: built biblix-lsp and topos')
         done(true)
       else
         local lines = vim.split(stderr or '', '\n', { trimempty = true })

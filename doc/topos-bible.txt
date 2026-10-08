@@ -9,7 +9,7 @@ CONTENTS                                                         *topos-bible*
   4. Language server ................................... |topos-bible-lsp|
   5. Bible text ....................................... |topos-bible-text|
 
-topos-bible.nvim runs topos-lsp (completion, hover, inlay hints, symbols,
+topos-bible.nvim runs biblix-lsp (completion, hover, inlay hints, symbols,
 diagnostics, go-to-references, and search code actions) and searches your
 workspace with the topos CLI. With a Bible (a folder of USX files), hover
 shows a reference's text and go-to-definition opens the whole book.
@@ -33,13 +33,15 @@ With lazy.nvim: >lua
   }
 <
 Building needs Rust (https://rustup.rs): |:ToposBuild| runs `cargo install`
-into the plugin's build/ folder, from the topos repository on GitHub, or from
-a checkout of it (`source`). If the binaries are missing, `setup()` builds
+into the plugin's build/ folder: biblix-lsp (the language server) from a biblix
+checkout and topos (the CLI) from a topos checkout (`source`), or from GitHub.
+biblix-lsp can't be installed from GitHub until biblix is published, so set
+`source` to checkouts for now. If the binaries are missing, `setup()` builds
 them (see `auto_build`). Binaries on your PATH work too.
 
 `require('topos').setup(opts)` takes (the defaults): >lua
   {
-    -- topos-lsp's settings, overriding ~/.config/topos/config.toml (the
+    -- biblix-lsp's settings, overriding ~/.config/topos/config.toml (the
     -- CLI's keys), like { format = 'abbreviation',
     --   ['psg-fmt'] = { join_adjacent = true }, ext = 'md,txt',
     --   ['inlay-hints'] = 'changed' | 'always' | 'osis' | 'never',
@@ -84,7 +86,8 @@ them (see `auto_build`). Binaries on your PATH work too.
     },
     -- Binary paths; nil uses the plugin's build, then your PATH
     cmd = { lsp = nil, cli = nil },
-    -- What :ToposBuild builds: nil for GitHub, or a topos checkout
+    -- What :ToposBuild builds from: a topos checkout (biblix beside it), or
+    -- { topos = '~/src/topos', biblix = '~/src/biblix' }; nil for GitHub
     source = nil,
     auto_build = true,
     -- 'auto' (Telescope if installed), 'telescope', or 'quickfix'
@@ -124,7 +127,7 @@ Without a passage, these use the reference under the cursor. Passages are
 completed with <Tab> (`John 3:` lists every verse).
 
                                                               *:ToposLspStart*
-:ToposLspStart          Starts topos-lsp for the current buffer, whatever its
+:ToposLspStart          Starts biblix-lsp for the current buffer, whatever its
                         file type (an unnamed buffer too), or restarts it if
                         it is running (re-attaching its buffers). Neovim can't
                         route diagnostics to an unnamed buffer, so the plugin
@@ -145,7 +148,7 @@ completed with <Tab> (`John 3:` lists every verse).
                         default).
 
                                                                  *:ToposBuild*
-:ToposBuild[!]          Builds topos-lsp and topos if they are missing (!
+:ToposBuild[!]          Builds biblix-lsp and topos if they are missing (!
                         rebuilds), then starts the language server. It
                         runs `cargo install` into the plugin's build/
                         folder, from GitHub or `source`.
@@ -282,7 +285,7 @@ Without `color` or `highlight`, each links to a group of your colorscheme:
   divine_name       @lsp.type.divineName.topos-bible       @markup.strong
   quotes            @lsp.type.quote.topos-bible            @markup.quote
 
-In whole books the colors come from topos-lsp's semantic tokens, so the text
+In whole books the colors come from biblix-lsp's semantic tokens, so the text
 has no markup. In hover (and completion documentation), a passage is a
 ```topos-bible code block: Neovim hides its first line, whose info string says
 what to color, and the plugin colors the block the same way (its text is

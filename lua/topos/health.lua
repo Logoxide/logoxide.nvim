@@ -6,7 +6,7 @@ function M.check()
   local config = require('topos.config')
   vim.health.start('topos-bible.nvim')
   for _, kind in ipairs({ 'lsp', 'cli' }) do
-    local name = kind == 'lsp' and 'topos-lsp' or 'topos'
+    local name = kind == 'lsp' and 'biblix-lsp' or 'topos'
     local path = bin.path(kind)
     if path then
       local version = vim.system({ path, '--version' }, { text = true }):wait().stdout or ''
@@ -46,9 +46,9 @@ function M.check()
     vim.health.info('Telescope is not installed: results open in the quickfix list')
   end
   if #vim.lsp.get_clients({ name = 'topos' }) > 0 then
-    vim.health.ok('topos-lsp is running')
+    vim.health.ok('biblix-lsp is running')
   elseif config.options.lsp.enabled then
-    vim.health.info('topos-lsp is not attached to any buffer yet (open a ' .. table.concat(config.options.lsp.filetypes, ' or ') .. ' file)')
+    vim.health.info('biblix-lsp is not attached to any buffer yet (open a ' .. table.concat(config.options.lsp.filetypes, ' or ') .. ' file)')
   end
 end
 

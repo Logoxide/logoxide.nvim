@@ -10,7 +10,7 @@ local function client()
   return vim.lsp.get_clients({ name = 'topos' })[1]
 end
 
--- topos-lsp's Bibles, the default first: { { name, aliases, books } }
+-- biblix-lsp's Bibles, the default first: { { name, aliases, books } }
 function M.list()
   local c = client()
   if not c then
