@@ -52,13 +52,17 @@ them (see `auto_build`). Binaries on your PATH work too.
     bible = nil,
     -- How Bible text is written and colored (see |topos-bible-markup|)
     markup = {
-      verse_numbers = { show = true, display = '[{verse}]', color = nil },
-      chapter_numbers = { show = true, display = '{name} {chapter}',
-                          color = nil },
-      words_of_jesus = { show = true, color = nil },
-      headings = { show = true, color = nil },
-      notes = { show = false, color = nil },
+      verse_numbers = { show = true, display = '[{verse}]' },
+      chapter_numbers = { show = true, display = '{name} {chapter}' },
+      headings = { show = true, display = '{text}' },
+      notes = { show = false, display = '[{text}]' },
+      words_of_jesus = { show = true, display = '{text}' },
+      added = { show = true, display = '{text}' },
+      divine_name = { show = true, display = '{text}' },
+      quotes = { show = true, display = '{text}' },
     },
+    -- Code actions that insert a passage (see |topos-bible-insertions|)
+    insertions = {},
     lsp = {
       enabled = true,
       filetypes = { 'markdown', 'text' },
@@ -163,39 +167,105 @@ the Bible. Its files are left out of workspace searches. Then:
 
 - Hovering a reference (|K|) shows the passage's text, with the heading
   before it.
-- Go to definition (|CTRL-]|, or |vim.lsp.buf.definition()|) opens the whole
-  book at the passage, in a buffer named like `topos-bible://BSB/JHN`. You
+- Completing a chapter or verse shows its text as the item's documentation
+  (with 'completeopt' "popup", or your completion plugin's documentation).
+- Go to definition (|CTRL-]|, or |vim.lsp.buf.definition()|) and go to
+  declaration (|vim.lsp.buf.declaration()|) open the whole book at the passage, in a buffer named like `topos-bible://BSB/JHN`. You
   can also open one with `:edit topos-bible://BSB/JHN`. The buffer can't be
   changed (its 'filetype' is `topos-bible`, and it wraps long paragraphs).
 - In that buffer, go to references (|grr|) on a verse lists every reference
   that names it in your workspace (explicit overlap: `John 3` doesn't count
   for John 3:16); on a chapter's label, every reference that shares a verse
-  with the chapter.
+  with the chapter. Hovering a verse there says how many references name it,
+  and in how many files (`???` if searching takes more than half a second;
+  what was read is cached, so hovering again gets further).
 
                                                           *topos-bible-markup*
-`markup` says how the text is written and colored. Each kind of element has
-`show`, and labels have `display`, a template with `{verse}` (`16`, or `4-5`
-for a bridge), `{chapter}`, `{name}` (`John`), and `{book}` (`JHN`): >lua
+`markup` says how Bible text is written and colored, in whole books, hover,
+completion documentation, and insertions. It has one table per element:
+
+  Key               What it is                                Shown by default
+  verse_numbers     a verse's number, a label                 yes
+  chapter_numbers   a chapter's number, a label on its own    yes
+                    line (whole books)
+  headings          section headings, on their own line       yes
+  notes             footnotes                                 no
+  words_of_jesus    words of Christ ("red letters")           yes
+  added             translators' additions (KJV italics)      yes
+  divine_name       LORD in small capitals                    yes
+  quotes            quotations other than words of Jesus      yes
+
+Each table takes:
+
+  show        `true` or `false`. Hidden headings and notes are left out;
+              hidden others are plain text (no `display` or color).
+  display     How it is written.
+              - verse_numbers and chapter_numbers: a label, with `{verse}`
+                (`16`, or `4-5` for a bridge), `{chapter}`, `{name}` (`John`),
+                and `{book}` (`JHN`). Defaults: `'[{verse}]'` and
+                `'{name} {chapter}'`.
+              - The others: a template with `{text}` (the element's text) and
+                `{name}`, like `'## {text}'` or `'“{text}”'`. Default
+                `'{text}'` (notes: `'[{text}]'`). The template's text is
+                glued to the element's words.
+  color       A color name or `'#rrggbb'` (the foreground), or a highlight
+              definition like `{ fg = 'gray', italic = true }` (see
+              |nvim_set_hl()|).
+  highlight   Or a highlight group to use, like `'Comment'` (instead of
+              `color`).
+
+For example: >lua
   markup = {
-    verse_numbers = { show = true, color = 'blue', display = '[{verse}]' },
-    chapter_numbers = { display = 'Chapter {chapter}' },
-    words_of_jesus = { color = 'red' },     -- show = false: not colored
-    headings = { show = false },
-    notes = { show = true, color = { fg = 'gray', italic = true } },
+    verse_numbers = { color = 'blue', display = '{verse} ' },
+    chapter_numbers = { display = 'Chapter {chapter}', highlight = 'Title' },
+    headings = { display = '## {text}', highlight = '@markup.heading' },
+    notes = { show = true, display = '({text})', color = { fg = 'gray', italic = true } },
+    words_of_jesus = { color = 'red', display = '“{text}”' },
+    added = { highlight = 'Comment' },
   }
 <
-`color` is a color name or `'#rrggbb'`, or a highlight definition (see
-|nvim_set_hl()|). Without one, each links to a group of your colorscheme:
+Without `color` or `highlight`, each links to a group of your colorscheme:
 
   Element           Highlight group                        Default link
   verse_numbers     @lsp.type.verseNumber.topos-bible      |hl-Number|
   chapter_numbers   @lsp.type.chapterNumber.topos-bible    |hl-Title|
-  words_of_jesus    @lsp.type.wordsOfJesus.topos-bible     DiagnosticError
   headings          @lsp.type.heading.topos-bible          |hl-Title|
   notes             @lsp.type.note.topos-bible             |hl-Comment|
+  words_of_jesus    @lsp.type.wordsOfJesus.topos-bible     DiagnosticError
+  added             @lsp.type.added.topos-bible            @markup.italic
+  divine_name       @lsp.type.divineName.topos-bible       @markup.strong
+  quotes            @lsp.type.quote.topos-bible            @markup.quote
 
-The colors come from topos-lsp's semantic tokens, so the text itself has no
-markup. `markup` can also go in ~/.config/topos/config.toml (as `[markup]`,
-without colors), where the server reads it like the other settings.
+In whole books the colors come from topos-lsp's semantic tokens, so the text
+has no markup. In hover (and completion documentation), a passage is a
+```topos-bible code block: Neovim hides its first line, whose info string says
+what to color, and the plugin colors the block the same way (its text is
+`ToposBibleText`, Normal's color, rather than a code color).
 
+`markup` can also go in ~/.config/topos/config.toml (as `[markup]`, without
+colors), where the server reads it like the other settings.
+
+                                                      *topos-bible-insertions*
+`insertions` are ways to insert a passage's text below a reference, each a
+code action (|gra|) named "Insert {name}". Each takes:
+
+  name          The action's name.
+  display       What is inserted on the lines after the reference: `{text}`
+                (the passage), `{reference}` (as formatted, `John 3:16`), and
+                `{osis}` (`John.3.16`). Default `'{text}'`.
+  line_prefix   Written before each line of `{text}`, like `'> '`.
+  markup        `markup` for this insertion, over the one above (the same
+                keys, without colors).
+
+For example, an Obsidian callout and plain text: >lua
+  insertions = {
+    {
+      name = 'Callout',
+      display = '> [!bible] {reference}\n{text}',
+      line_prefix = '> ',
+      markup = { headings = { show = false }, verse_numbers = { display = '{verse}' } },
+    },
+    { name = 'Plain text', markup = { verse_numbers = { show = false } } },
+  }
+<
  vim:tw=78:ts=8:ft=help:norl:

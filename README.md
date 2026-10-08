@@ -20,9 +20,16 @@ With [lazy.nvim](https://lazy.folke.io):
     -- A folder of USX files, one book each (JHN.usx): hover shows the text, and go to
     -- definition opens the whole book
     bible = '~/Bibles/BSB',
+    -- How it is written and colored (see :help topos-bible-markup for every key)
     markup = {
       verse_numbers = { show = true, color = 'blue', display = '[{verse}]' },
       words_of_jesus = { show = true, color = 'red' },
+      headings = { display = '## {text}', highlight = 'Title' }, -- a group instead of a color
+      notes = { show = true, display = '({text})', highlight = 'Comment' },
+    },
+    -- Code actions that insert a passage below a reference ("Insert Callout")
+    insertions = {
+      { name = 'Callout', display = '> [!bible] {reference}\n{text}', line_prefix = '> ' },
     },
     -- topos-lsp's settings: the CLI's config.toml keys, which these override
     settings = {
@@ -40,10 +47,13 @@ With [lazy.nvim](https://lazy.folke.io):
   reference as formatted, and warnings for verses that don't exist); go to references (`grr`)
   lists the references that are exactly the one under the cursor, and the code actions (`gra`)
   reformat it or search for it by explicit overlap, any overlap, exact overlap, or inside it
-- **Bible text**: with `bible`, hovering a reference shows its text (`K`), and go to definition
-  (`<C-]>`) opens the whole book in a read-only buffer at the passage, with verse
-  numbers, chapters, headings, and words of Jesus colored the way `markup` says. Go to
-  references on a verse there lists every reference to it in your notes
+- **Bible text**: with `bible`, hovering a reference shows its text (`K`), and so does a
+  chapter or verse completion's documentation. Go to definition (`<C-]>`) or declaration opens
+  the whole book in a read-only buffer at the passage, with verse numbers, chapters, headings,
+  words of Jesus, and so on written and colored the way `markup` says. Go to references on a
+  verse there lists every reference to it in your notes, and hovering it counts them
+- **Insertions**: code actions that write a passage below its reference, like an Obsidian
+  callout
 - **Commands**: `:ToposSearch` (every reference), `:ToposQuery -g Wisdom` (the CLI's options,
   completed with Tab), and `:ToposExplicitOverlap John 3:16`, `:ToposAnyOverlap`,
   `:ToposExactOverlap`, `:ToposInside`, `:ToposExcludeOverlap` (the reference under the cursor

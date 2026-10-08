@@ -11,16 +11,36 @@ M.defaults = {
   -- and eBible.org publish them): hover shows a reference's text, and go-to-definition opens the
   -- whole book in a read-only buffer
   bible = nil,
-  -- How Bible text is written and colored. `show` and `display` change the text (`display` is a
-  -- label: {verse}, {chapter}, {name} like John, {book} like JHN); `color` is a color ('red',
-  -- '#5f87d7') or a highlight ({ fg = 'red', bold = true }), nil for the colorscheme's
+  -- How Bible text is written and colored (see :help topos-bible-markup). Each element has:
+  --   show       whether it is shown (hidden headings and notes are left out; the others are
+  --              plain text, without their display or color)
+  --   display    how it is written: for verse and chapter numbers a label with {verse},
+  --              {chapter}, {name} (John), and {book} (JHN); for the others a template with
+  --              {text} (the element's text), like '## {text}' or '“{text}”'
+  --   color      a color ('red', '#5f87d7') or a highlight definition ({ fg = 'red', bold = true })
+  --   highlight  or a highlight group to link to ('Comment'), instead of `color`
+  -- Without `color` or `highlight`, each links to a group of your colorscheme
   markup = {
-    verse_numbers = { show = true, display = '[{verse}]', color = nil },
-    chapter_numbers = { show = true, display = '{name} {chapter}', color = nil },
-    words_of_jesus = { show = true, color = nil },
-    headings = { show = true, color = nil },
-    notes = { show = false, color = nil },
+    verse_numbers = { show = true, display = '[{verse}]' },
+    chapter_numbers = { show = true, display = '{name} {chapter}' },
+    headings = { show = true, display = '{text}' },
+    notes = { show = false, display = '[{text}]' },
+    words_of_jesus = { show = true, display = '{text}' },
+    -- Translators' additions (KJV italics)
+    added = { show = true, display = '{text}' },
+    -- LORD in small capitals
+    divine_name = { show = true, display = '{text}' },
+    -- Quotations other than words of Jesus
+    quotes = { show = true, display = '{text}' },
   },
+  -- Ways to insert a passage's text below a reference, each a code action ("Insert Callout"):
+  --   name         the action is "Insert {name}"
+  --   display      what is inserted: {text} (the passage), {reference} (John 3:16), {osis}
+  --                (John.3.16); default '{text}'
+  --   line_prefix  written before each line of {text}, like '> '
+  --   markup       `markup` for this insertion, over the one above (same keys; no colors)
+  -- like { name = 'Callout', display = '> [!bible] {reference}\n{text}', line_prefix = '> ' }
+  insertions = {},
   lsp = {
     enabled = true,
     filetypes = { 'markdown', 'text' },
@@ -47,12 +67,14 @@ function M.set(opts)
   M.options = vim.tbl_deep_extend('force', vim.deepcopy(M.defaults), opts or {})
 end
 
--- The language server's settings: `bible` and `markup`, then `lsp.settings`, then the top-level
--- `settings`
+-- The language server's settings: `bible`, `markup`, and `insertions`, then `lsp.settings`,
+-- then the top-level `settings`
 function M.lsp_settings()
-  local bible = M.options.bible and { bible = vim.fn.expand(M.options.bible), markup = M.options.markup }
-    or { markup = M.options.markup }
-  return vim.tbl_deep_extend('force', bible, M.options.lsp.settings or {}, M.options.settings or {})
+  local base = { markup = M.options.markup, insertions = M.options.insertions }
+  if M.options.bible then
+    base.bible = vim.fn.expand(M.options.bible)
+  end
+  return vim.tbl_deep_extend('force', base, M.options.lsp.settings or {}, M.options.settings or {})
 end
 
 return M

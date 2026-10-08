@@ -58,10 +58,13 @@ check() {
   fi
   # :ToposLspStart starts the server in an unnamed buffer with no file type, then restarts it
   # The Bible: hover text, go-to-definition opens the book, colors, and references from a verse
-  for line in 'hover text > Jesus and Nicodemus' 'book topos-bible://BSB/JHN topos-bible false nofile' \
+  for line in 'hover text Jesus and Nicodemus' \
+    'hover colors heading=Jesus and Nicodemus verseNumber=[16]' \
+    'verse hover **John 3:16**  4 references in 3 files' 'declaration true' \
+    'callout > [!bible] John 3:16|> Jesus and Nicodemus|> [16] For God so loved the world.' 'book topos-bible://BSB/JHN topos-bible false nofile' \
     'book line [16] For God so loved the world. [17] Jesus said, I did not come to condemn.' \
     'book cursor 4 0' 'book title John' 'woj @lsp.type.wordsOfJesus.topos-bible 16711680' \
-    'verse number @lsp.type.verseNumber.topos-bible' 'book references 4' 'tag true 4' \
+    'verse number @lsp.type.verseNumber.topos-bible Special' 'book references 4' 'tag true 4' \
     'unnamed before 0' 'unnamed after 1 John 3:16' 'unnamed reformat Read John 3:16 today' 'unnamed edited Romans 8:28' 'restarted 1 true true true'; do
     if ! grep -qxF "$line" <<<"$output"; then
       echo "FAIL ($name): expected '$line'"

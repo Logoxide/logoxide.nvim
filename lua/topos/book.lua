@@ -3,6 +3,10 @@ Whole books of the `bible` option as read-only buffers, named like `topos-bible:
 Go-to-definition on a reference opens one at the passage; `:edit topos-bible://BSB/JHN` works too.
 topos-lsp renders the book (with `markup`'s labels) and colors it with semantic tokens, which
 `markup`'s colors set; references from a verse list every reference to it in the workspace.
+
+Passages in hover (and completion documentation) are ```topos-bible code blocks whose info
+string, which Neovim hides, says what to color (line:column:length:type, in bytes); the plugin
+colors them the same way.
 ]]
 local config = require('topos.config')
 
@@ -17,7 +21,13 @@ M.highlights = {
   words_of_jesus = { 'wordsOfJesus', 'DiagnosticError' },
   headings = { 'heading', 'Title' },
   notes = { 'note', 'Comment' },
+  added = { 'added', '@markup.italic' },
+  divine_name = { 'divineName', '@markup.strong' },
+  quotes = { 'quote', '@markup.quote' },
 }
+
+-- The token types in topos-lsp's order (the numbers in a code block's info string)
+M.legend = { 'verseNumber', 'chapterNumber', 'wordsOfJesus', 'heading', 'note', 'added', 'divineName', 'quote' }
 
 -- The highlight group for a token type in book buffers
 function M.group(token)
@@ -26,10 +36,16 @@ end
 
 -- Sets the highlights from `markup`'s colors (again after a colorscheme clears them)
 function M.apply_highlights()
+  -- Normal's foreground only, so a float keeps its background
+  local normal = vim.api.nvim_get_hl(0, { name = 'Normal', link = false })
+  vim.api.nvim_set_hl(0, 'ToposBibleText', { fg = normal.fg, ctermfg = normal.ctermfg, default = true })
   for key, highlight in pairs(M.highlights) do
-    local color = (config.options.markup[key] or {}).color
+    local element = config.options.markup[key] or {}
+    local color = element.color
     local spec
-    if type(color) == 'string' then
+    if type(element.highlight) == 'string' then
+      spec = { link = element.highlight }
+    elseif type(color) == 'string' then
       spec = { fg = color }
     elseif type(color) == 'table' then
       spec = color
@@ -78,6 +94,41 @@ function M.read(bufnr, uri)
   vim.lsp.buf_attach_client(bufnr, client.id)
 end
 
+local fence_ns = vim.api.nvim_create_namespace('topos_bible_fences')
+
+-- Colors the ```topos-bible code blocks in a Markdown buffer (a hover or documentation float)
+function M.color_fences(bufnr)
+  local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+  vim.api.nvim_buf_clear_namespace(bufnr, fence_ns, 0, -1)
+  for i, line in ipairs(lines) do
+    local info = line:match('^%s*```+' .. vim.pesc(M.scheme) .. '%s*(.*)$')
+    -- The block's text as text, not code (ToposBibleText)
+    local last = info and i
+    while last and lines[last + 1] and not lines[last + 1]:match('^%s*```+%s*$') do
+      last = last + 1
+    end
+    if last and last > i then
+      pcall(vim.api.nvim_buf_set_extmark, bufnr, fence_ns, i, 0, {
+        end_row = last - 1,
+        end_col = #lines[last],
+        hl_group = 'ToposBibleText',
+        priority = 150,
+      })
+    end
+    for row, col, len, kind in (info or ''):gmatch('(%d+):(%d+):(%d+):(%d+)') do
+      local token = M.legend[tonumber(kind) + 1]
+      local lnum = i + tonumber(row) -- the block starts on the line after the fence (0-based i)
+      if token and lines[lnum + 1] then
+        pcall(vim.api.nvim_buf_set_extmark, bufnr, fence_ns, lnum, tonumber(col), {
+          end_col = tonumber(col) + tonumber(len),
+          hl_group = M.group(token),
+          priority = 200,
+        })
+      end
+    end
+  end
+end
+
 function M.setup()
   local group = vim.api.nvim_create_augroup('topos_books', { clear = true })
   vim.api.nvim_create_autocmd('BufReadCmd', {
@@ -88,6 +139,13 @@ function M.setup()
     end,
   })
   vim.api.nvim_create_autocmd('ColorScheme', { group = group, callback = M.apply_highlights })
+  vim.api.nvim_create_autocmd('FileType', {
+    group = group,
+    pattern = 'markdown',
+    callback = function(args)
+      M.color_fences(args.buf)
+    end,
+  })
   M.apply_highlights()
 end
 

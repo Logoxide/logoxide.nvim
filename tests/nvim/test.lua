@@ -14,7 +14,8 @@ require("topos").setup({ cmd = { lsp = TOPOS .. "/target/debug/topos-lsp", cli =
   -- Server settings, as in a lazy.nvim spec's `opts`
   settings = { ["reference-diagnostics"] = "hint" },
   bible = WORK .. "/Bibles/BSB",
-  markup = { words_of_jesus = { color = "#ff0000" } } })
+  markup = { words_of_jesus = { color = "#ff0000" }, verse_numbers = { highlight = "Special" } },
+  insertions = { { name = "Callout", display = "> [!bible] {reference}\n{text}", line_prefix = "> " } } })
 vim.cmd("edit " .. WORK .. "/ws/open.txt")
 vim.wait(5000, function() return #vim.lsp.get_clients({ bufnr = 0, name = "topos" }) > 0 end)
 vim.wait(500)
@@ -76,7 +77,23 @@ do
   local hover = vim.lsp.buf_request_sync(0, "textDocument/hover", params, 5000)
   local value = ""
   for _, r in pairs(hover or {}) do value = r.result and r.result.contents.value or value end
-  log("hover text", value:match("\n\n(> [^\n]*)"))
+  log("hover text", value:match("\n```topos%-bible[^\n]*\n([^\n]*)"))
+end
+-- The hover float colors its passage
+vim.lsp.buf.hover()
+vim.wait(3000, function() return vim.b.lsp_floating_preview ~= nil end)
+do
+  local win = vim.b.lsp_floating_preview
+  local float = vim.api.nvim_win_get_buf(win)
+  local ns = vim.api.nvim_get_namespaces().topos_bible_fences
+  local groups = {}
+  for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(float, ns, 0, -1, { details = true })) do
+    local text = vim.api.nvim_buf_get_text(float, mark[2], mark[3], mark[4].end_row or mark[2], mark[4].end_col, {})[1]
+    local token = mark[4].hl_group:match("type%.(%w+)")
+    if token then table.insert(groups, token .. "=" .. text) end
+  end
+  log("hover colors", table.concat(groups, " "))
+  vim.api.nvim_win_close(win, true)
 end
 -- Go to definition opens the whole book, read-only, at the verse
 vim.lsp.buf.definition()
@@ -92,7 +109,9 @@ vim.wait(5000, function() return #vim.inspect_pos(book, 3, 60).semantic_tokens >
 for _, token in ipairs(vim.inspect_pos(book, 3, 60).semantic_tokens) do
   log("woj", token.opts.hl_group, vim.api.nvim_get_hl(0, { name = token.opts.hl_group }).fg)
 end
-for _, token in ipairs(vim.inspect_pos(book, 3, 1).semantic_tokens) do log("verse number", token.opts.hl_group) end
+for _, token in ipairs(vim.inspect_pos(book, 3, 1).semantic_tokens) do
+  log("verse number", token.opts.hl_group, vim.api.nvim_get_hl(0, { name = token.opts.hl_group, link = true }).link)
+end
 -- References from a verse: every reference that names it (open.txt's, a.md's two, and b.txt's)
 do
   local params = vim.lsp.util.make_position_params(0, client.offset_encoding)
@@ -102,6 +121,13 @@ do
   for _, r in pairs(result) do n = n + #(r.result or {}) end
   log("book references", n)
 end
+-- Hovering a verse in the book counts its references
+do
+  vim.api.nvim_win_set_cursor(0, { 4, 10 })
+  local params = vim.lsp.util.make_position_params(0, client.offset_encoding)
+  local hover = vim.lsp.buf_request_sync(book, "textDocument/hover", params, 5000) or {}
+  for _, r in pairs(hover) do log("verse hover", (r.result.contents.value:gsub("\n", " "))) end
+end
 -- <C-]> (the LSP's tagfunc) opens it too
 vim.cmd("buffer " .. WORK .. "/ws/open.txt")
 vim.api.nvim_win_set_cursor(0, { 1, 6 })
@@ -109,6 +135,24 @@ vim.cmd.normal({ args = { vim.keycode("<C-]>") }, bang = true })
 vim.wait(3000, function() return vim.api.nvim_get_current_buf() == book end)
 log("tag", vim.api.nvim_get_current_buf() == book, vim.api.nvim_win_get_cursor(0)[1])
 vim.cmd("buffer " .. WORK .. "/ws/open.txt")
+-- Go to declaration opens the book too
+vim.api.nvim_win_set_cursor(0, { 1, 6 })
+vim.lsp.buf.declaration()
+vim.wait(3000, function() return vim.api.nvim_get_current_buf() == book end)
+log("declaration", vim.api.nvim_get_current_buf() == book)
+vim.cmd("buffer " .. WORK .. "/ws/open.txt")
+-- Insert Callout: the passage below the reference
+do
+  vim.api.nvim_win_set_cursor(0, { 1, 6 })
+  local params = vim.lsp.util.make_range_params(0, client.offset_encoding)
+  params.context = { diagnostics = {} }
+  for _, r in pairs(vim.lsp.buf_request_sync(0, "textDocument/codeAction", params, 5000) or {}) do
+    for _, a in ipairs(r.result or {}) do
+      if a.title == "Insert Callout" then vim.lsp.util.apply_workspace_edit(a.edit, client.offset_encoding) end
+    end
+  end
+  log("callout", table.concat(vim.api.nvim_buf_get_lines(0, 1, 4, false), "|"))
+end
 -- :ToposLspStart in an unnamed buffer with no file type, then again to restart
 local first = vim.lsp.get_clients({ name = "topos" })[1].id
 vim.cmd("enew")
