@@ -26,6 +26,7 @@ With [lazy.nvim](https://lazy.folke.io):
       words_of_jesus = { show = true, color = 'red' },
       headings = { display = '## {text}', highlight = 'Title' }, -- a group instead of a color
       notes = { show = true, display = '({text})', highlight = 'Comment' },
+      width = 80, -- break lines at 80 characters
     },
     -- Code actions that insert a passage below a reference ("Insert Callout")
     insertions = {

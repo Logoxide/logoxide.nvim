@@ -60,6 +60,7 @@ them (see `auto_build`). Binaries on your PATH work too.
       added = { show = true, display = '{text}' },
       divine_name = { show = true, display = '{text}' },
       quotes = { show = true, display = '{text}' },
+      width = nil,
     },
     -- Code actions that insert a passage (see |topos-bible-insertions|)
     insertions = {},
@@ -224,6 +225,13 @@ For example: >lua
     added = { highlight = 'Comment' },
   }
 <
+`markup.width` (a number, not a table) breaks lines longer than that many
+characters at a space, in whole books, hover, and insertions; nil (the
+default) leaves lines whole, and a book buffer wraps them at the window's
+width. 'textwidth' doesn't do this: it only applies as you type or format
+(|gq|), and a book buffer can't be changed. >lua
+  markup = { width = 80 }
+<
 Without `color` or `highlight`, each links to a group of your colorscheme:
 
   Element           Highlight group                        Default link
@@ -240,7 +248,9 @@ In whole books the colors come from topos-lsp's semantic tokens, so the text
 has no markup. In hover (and completion documentation), a passage is a
 ```topos-bible code block: Neovim hides its first line, whose info string says
 what to color, and the plugin colors the block the same way (its text is
-`ToposBibleText`, Normal's color, rather than a code color).
+`ToposBibleText`, Normal's color, rather than a code color). Completion
+documentation is a plain ```topos-bible block, since completion plugins like
+blink.cmp show the first line instead of hiding it.
 
 `markup` can also go in ~/.config/topos/config.toml (as `[markup]`, without
 colors), where the server reads it like the other settings.

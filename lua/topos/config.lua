@@ -32,6 +32,9 @@ M.defaults = {
     divine_name = { show = true, display = '{text}' },
     -- Quotations other than words of Jesus
     quotes = { show = true, display = '{text}' },
+    -- Lines longer than this many characters break at a space, in whole books, hover, and
+    -- insertions (nil: no limit; whole books still wrap at the window's width)
+    width = nil,
   },
   -- Ways to insert a passage's text below a reference, each a code action ("Insert Callout"):
   --   name         the action is "Insert {name}"
