@@ -256,18 +256,24 @@ blink.cmp show the first line instead of hiding it.
 colors), where the server reads it like the other settings.
 
                                                       *topos-bible-insertions*
-`insertions` are ways to insert a passage's text below a reference, each a
-code action (|gra|) named "Insert {name}". Each takes:
+`insertions` are ways to insert a passage's text at a reference, each a code
+action (|gra|) named "Insert {name}". Each takes:
 
   name          The action's name.
-  display       What is inserted on the lines after the reference: `{text}`
+  display       What is inserted: `{text}`
                 (the passage), `{reference}` (as formatted, `John 3:16`), and
                 `{osis}` (`John.3.16`). Default `'{text}'`.
   line_prefix   Written before each line of `{text}`, like `'> '`.
   markup        `markup` for this insertion, over the one above (the same
                 keys, without colors).
+  replace       Where it goes:
+                - nil (the default): on the lines below the reference
+                - `'line'`: in place of the reference's whole line
+                - `'inline'`: in place of the reference, keeping the rest
+                  of its line
 
-For example, an Obsidian callout and plain text: >lua
+For example, an Obsidian callout, plain text, and a quote in place of the
+reference: >lua
   insertions = {
     {
       name = 'Callout',
@@ -276,6 +282,13 @@ For example, an Obsidian callout and plain text: >lua
       markup = { headings = { show = false }, verse_numbers = { display = '{verse}' } },
     },
     { name = 'Plain text', markup = { verse_numbers = { show = false } } },
+    -- `See John 3:16 here` → `See “For God so loved ...” (John 3:16) here`
+    {
+      name = 'Quote',
+      replace = 'inline',
+      display = '“{text}” ({reference})',
+      markup = { verse_numbers = { show = false }, headings = { show = false } },
+    },
   }
 <
  vim:tw=78:ts=8:ft=help:norl:

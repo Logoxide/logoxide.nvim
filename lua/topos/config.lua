@@ -42,6 +42,8 @@ M.defaults = {
   --                (John.3.16); default '{text}'
   --   line_prefix  written before each line of {text}, like '> '
   --   markup       `markup` for this insertion, over the one above (same keys; no colors)
+  --   replace      what it replaces: 'line' (the reference's whole line), 'inline' (just the
+  --                reference, keeping the rest of its line), or nil (insert on the lines below)
   -- like { name = 'Callout', display = '> [!bible] {reference}\n{text}', line_prefix = '> ' }
   insertions = {},
   lsp = {
