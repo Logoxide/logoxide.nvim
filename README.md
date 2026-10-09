@@ -63,10 +63,10 @@ With [lazy.nvim](https://lazy.folke.io):
   verse there lists every reference to it in your notes, and hovering it counts them
 - **Reading**: `:ToposRead John` opens a whole book (`1 cor` and `JHN` work too, and
   `:ToposRead John KJV` another Bible's), and `:ToposRead` alone chooses one in Telescope,
-  previewing each book colored as it reads. In a book, `]b` and `[b` go to the next and
-  previous book, and `:ToposNextBook`, `:ToposNextChapter`, `:ToposNextVerse` (and
-  `:ToposPrev*`) are there to map; `navigation` says what happens past the end (by default
-  books wrap, chapters go on to the next book, and verses to the next chapter)
+  previewing each book colored as it reads. In a book, `:ToposNextBook`, `:ToposNextChapter`,
+  `:ToposNextVerse` (and `:ToposPrev*`) move through the Bible; `navigation` says what happens
+  past the end (by default books wrap, chapters go on to the next book, and verses to the next
+  chapter). The plugin maps no keys; see below for some
 - **Several Bibles**: with `bibles`, a reference followed by a Bible's name (`John 3:16 KJV`)
   uses that Bible for hover, go to definition, completion, insertions, and its own verse counts;
   `:ToposBible KJV` changes the default, and `:ToposParallel KJV` opens the same book in another
@@ -84,6 +84,20 @@ With [lazy.nvim](https://lazy.folke.io):
   by default)
 - **Telescope**: `:Telescope topos`, plus a picker per search; without Telescope, results open
   in the quickfix list
+
+Every command is a Lua function too (`require('topos').next_verse()`, `.read('John')`,
+`.search()`, ...; see `:help topos-bible-lua`), so you can map them; for example:
+
+```lua
+local topos = require('topos')
+for lhs, move in pairs({
+  [']b'] = topos.next_book, ['[b'] = topos.prev_book,
+  [']c'] = topos.next_chapter, ['[c'] = topos.prev_chapter,
+  [']v'] = topos.next_verse, ['[v'] = topos.prev_verse,
+}) do
+  vim.keymap.set('n', lhs, function() move(vim.v.count1) end)
+end
+```
 
 With [blink.cmp](https://github.com/saghen/blink.cmp), color the passages in its
 documentation window too:

@@ -44,13 +44,16 @@ local function install(args, what)
   end)
 end
 
--- :ToposBibleAdd {source}: a git URL, or ebible:<id> / fetch:<id> (as :ToposBibleSearch shows)
+-- What `bx import` takes: `ebible:<id>`, `fetch:<id>`, `ccel:<id>`, `sword:<repository>/<module>`
+local IMPORTS = { ebible = true, fetch = true, ccel = true, sword = true }
+
+-- :ToposBibleAdd {source}: a git URL, or an import such as ebible:<id> (as :ToposBibleSearch shows)
 function M.add(source)
   source = vim.trim(source or '')
   if source == '' then
-    return vim.notify('topos: give a git URL, or ebible:<id> or fetch:<id> (see :ToposBibleSearch)', vim.log.levels.WARN)
+    return vim.notify('topos: give a git URL, or ebible:<id>, fetch:<id>, ccel:<id>, or sword:<repository>/<module> (see :ToposBibleSearch)', vim.log.levels.WARN)
   end
-  if source:match('^ebible:') or source:match('^fetch:') then
+  if IMPORTS[source:match('^(%a+):') or ''] then
     install({ 'import', source }, source)
   else
     install({ 'add', '--git', source }, source)

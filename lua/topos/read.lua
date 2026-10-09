@@ -1,9 +1,8 @@
 --[[
 Reading a Bible directly: :ToposRead John opens the whole book (`topos-bible://BSB/JHN`), and
 :ToposRead alone chooses a book, in Telescope with the book rendered and colored as its preview.
-In a whole book, ]b and [b go to the next and previous book (`book_keys`), and :ToposNextBook,
-:ToposNextChapter, :ToposNextVerse, and their :ToposPrev* go to the next or previous one (each
-past the end as `navigation` says).
+In a whole book, :ToposNextBook, :ToposNextChapter, :ToposNextVerse, and their :ToposPrev* go to
+the next or previous one (each past the end as `navigation` says).
 ]]
 local bin = require('topos.bin')
 local book = require('topos.book')
@@ -307,12 +306,20 @@ local function chapters()
     local ok, col = pcall(vim.str_byteindex, line, 'utf-16', p.character, false)
     return { p.line, ok and col or 0 }
   end
+  local symbols = response and response.result or {}
+  -- Before biblix-lsp had them, a book's symbols were the references in its text
+  for _, symbol in ipairs(symbols) do
+    if symbol.kind ~= vim.lsp.protocol.SymbolKind.Namespace then
+      vim.notify('topos: this biblix-lsp can\'t move by chapter or verse; update it (:ToposBuild!)', vim.log.levels.ERROR)
+      return {}
+    end
+  end
   return vim.tbl_map(function(chapter)
     local verses = vim.tbl_map(function(verse)
       return position(verse.selectionRange.start)
     end, chapter.children or {})
     return { start = position(chapter.selectionRange.start), verses = verses }
-  end, response and response.result or {})
+  end, symbols)
 end
 
 -- The last of `positions` at or before the cursor (0 if the cursor is before them all)
@@ -361,9 +368,12 @@ end
 
 -- In a whole book, the chapter `step` chapters away (its label, or its first verse)
 function M.chapter(step)
-  local list = book_of(0) and chapters() or {}
-  if #list == 0 then
+  if not book_of(0) then
     return not_a_book()
+  end
+  local list = chapters()
+  if #list == 0 then
+    return
   end
   local starts = vim.tbl_map(function(chapter)
     return chapter.start
@@ -380,9 +390,12 @@ last, crossing books as `navigation.chapters` says), 'wrap' for this chapter's f
 'stop'
 ]]
 function M.verse(step)
-  local list = book_of(0) and chapters() or {}
-  if #list == 0 then
+  if not book_of(0) then
     return not_a_book()
+  end
+  local list = chapters()
+  if #list == 0 then
+    return
   end
   local current = math.max(1, index_at(vim.tbl_map(function(chapter)
     return chapter.start
@@ -424,23 +437,6 @@ function M.complete(lead, cmdline, pos)
     end
   end
   return candidates
-end
-
--- ]b and [b in a whole book (from ftplugin/topos-bible.lua)
-function M.map_keys(bufnr)
-  local keys = config.options.book_keys
-  if not keys then
-    return
-  end
-  local function map(lhs, step, desc)
-    if lhs then
-      vim.keymap.set('n', lhs, function()
-        M.book(step * vim.v.count1)
-      end, { buffer = bufnr, desc = desc })
-    end
-  end
-  map(keys.next, 1, 'Next book of the Bible')
-  map(keys.previous, -1, 'Previous book of the Bible')
 end
 
 return M

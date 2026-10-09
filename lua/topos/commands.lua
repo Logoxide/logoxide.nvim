@@ -58,53 +58,52 @@ function M.complete_passage(_, cmdline, pos)
   return candidates
 end
 
+local function api()
+  return require('topos')
+end
+
+local function bible_names()
+  return require('topos.bibles').names()
+end
+
 local commands = {
   ToposSearch = {
     function(opts)
-      local args = search.split(opts.args)
-      search.run(args, #args > 0 and ('Bible references in ' .. opts.args) or 'Bible references')
+      api().search(opts.args)
     end,
     { nargs = '*', complete = 'dir', desc = 'Every Bible reference in the workspace (or the paths given)' },
   },
   ToposQuery = {
     function(opts)
-      search.run(search.split(opts.args), 'topos ' .. opts.args)
+      api().query(opts.args)
     end,
     { nargs = '+', complete = M.complete_flags, desc = 'Search with the CLI\'s options, like -g Wisdom' },
   },
   ToposLspStart = {
     function()
-      require('topos').lsp_start()
+      api().lsp_start()
     end,
     { desc = 'Start biblix-lsp for this buffer (whatever its file type), or restart it' },
   },
   ToposBible = {
     function(opts)
-      require('topos.bibles').set_default(opts.args)
+      api().bible(opts.args)
     end,
     {
       nargs = '?',
-      complete = function()
-        return require('topos.bibles').names()
-      end,
+      complete = bible_names,
       desc = 'The Bible references use when they name none (choose one without a name)',
     },
   },
   ToposParallel = {
     function(opts)
-      require('topos.bibles').parallel(opts.args, opts.mods)
+      api().parallel(opts.args, opts.mods)
     end,
-    {
-      nargs = '?',
-      complete = function()
-        return require('topos.bibles').names()
-      end,
-      desc = 'This whole book in another Bible, side by side on the same verse',
-    },
+    { nargs = '?', complete = bible_names, desc = 'This whole book in another Bible, side by side on the same verse' },
   },
   ToposRead = {
     function(opts)
-      require('topos.read').read(opts.args, opts.mods)
+      api().read(opts.args, opts.mods)
     end,
     {
       nargs = '*',
@@ -116,19 +115,19 @@ local commands = {
   },
   ToposBibleAdd = {
     function(opts)
-      require('topos.packages').add(opts.args)
+      api().bible_add(opts.args)
     end,
     { nargs = 1, desc = 'Install a Bible: a biblix package\'s git URL, or ebible:<id> / fetch:<id>' },
   },
   ToposBibleSearch = {
     function(opts)
-      require('topos.packages').search(opts.args)
+      api().bible_search(opts.args)
     end,
     { nargs = '*', desc = 'Search the catalogs (eBible.org, fetch.bible) for a Bible to install' },
   },
   ToposBibleRemove = {
     function(opts)
-      require('topos.packages').remove(opts.args)
+      api().bible_remove(opts.args)
     end,
     {
       nargs = 1,
@@ -140,11 +139,7 @@ local commands = {
   },
   ToposBuild = {
     function(opts)
-      require('topos.build').build(opts.bang, function(ok)
-        if ok then
-          require('topos').start_lsp()
-        end
-      end)
+      api().build(opts.bang)
     end,
     { bang = true, desc = 'Build biblix-lsp and topos (! rebuilds)' },
   },
@@ -160,7 +155,7 @@ local passages = {
 for name, kind in pairs(passages) do
   commands[name] = {
     function(opts)
-      search.passage(kind, opts.args)
+      api()[kind](opts.args)
     end,
     {
       nargs = '*',
@@ -171,13 +166,13 @@ for name, kind in pairs(passages) do
 end
 
 -- :ToposNextBook, :ToposPrevVerse, ... in a whole book (with a count, that many)
-for unit, desc in pairs({ Book = 'book', Chapter = 'chapter', Verse = 'verse' }) do
-  for direction, step in pairs({ Next = 1, Prev = -1 }) do
-    commands['Topos' .. direction .. unit] = {
+for _, unit in ipairs({ 'book', 'chapter', 'verse' }) do
+  for direction, word in pairs({ next = 'Next', prev = 'Prev' }) do
+    commands['Topos' .. word .. unit:gsub('^%l', string.upper)] = {
       function(opts)
-        require('topos.read')[desc](step * math.max(opts.count, 1))
+        api()[direction .. '_' .. unit](math.max(opts.count, 1))
       end,
-      { count = 1, desc = ('In a whole book, the %s %s'):format(direction == 'Next' and 'next' or 'previous', desc) },
+      { count = 1, desc = ('In a whole book, the %s %s'):format(direction == 'next' and 'next' or 'previous', unit) },
     }
   end
 end

@@ -74,10 +74,12 @@ M.defaults = {
   source = nil,
   -- Build the binaries when setup can't find them (takes a few minutes the first time)
   auto_build = true,
-  -- In a whole book, the keys for the next and previous book (false for none)
-  book_keys = { next = ']b', previous = '[b' },
   -- Where :ToposNextBook, :ToposNextChapter, :ToposNextVerse (and :ToposPrev*) go past the end
-  -- (or start)
+  -- (or start). They have no keys of their own; for example:
+  --   vim.keymap.set('n', ']b', function() require('topos').next_book(vim.v.count1) end)
+  --   vim.keymap.set('n', '[b', function() require('topos').prev_book(vim.v.count1) end)
+  --   ]c / [c for chapters (next_chapter, prev_chapter), ]v / [v for verses (next_verse,
+  --   prev_verse)
   navigation = {
     -- 'wrap' (Revelation → Genesis) or 'stop'
     books = 'wrap',

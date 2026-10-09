@@ -238,9 +238,9 @@ end
 do
   vim.cmd("ToposRead jn")
   log("read", vim.api.nvim_buf_get_name(0), vim.bo.filetype)
-  vim.cmd("normal ]b")
+  require("topos").next_book()
   local next_book = vim.api.nvim_buf_get_name(0)
-  vim.cmd("normal [b")
+  require("topos").prev_book()
   log("read next", next_book, vim.api.nvim_buf_get_name(0))
   vim.cmd("ToposRead John AV")
   log("read bible", vim.api.nvim_buf_get_name(0))
@@ -259,7 +259,7 @@ do
   vim.cmd("ToposRead John BSB")
   vim.api.nvim_win_set_cursor(0, { 1, 0 })
   -- Past John's last verse, the next chapter: Romans 8 (the next book); back again
-  log("move verses", moves("ToposNextVerse", "ToposNextVerse", "ToposNextVerse", "ToposPrevVerse", "ToposPrevVerse"))
+  log("move verses", moves("ToposNextVerse", "ToposNextVerse", "lua require('topos').next_verse()", "ToposPrevVerse", "lua require('topos').prev_verse(1)"))
   log("move chapters", moves("ToposNextChapter", "ToposNextChapter", "ToposPrevChapter"))
   -- Books wrap (Romans → John) unless `navigation` says not to; verses can wrap in their chapter
   log("move books", moves("ToposNextBook", "ToposNextBook", "3ToposPrevBook"))

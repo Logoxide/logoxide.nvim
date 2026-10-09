@@ -202,6 +202,81 @@ local function apply_edits_command(command, ctx)
   vim.lsp.util.apply_text_edits(edits, ctx.bufnr, client and client.offset_encoding or 'utf-16')
 end
 
+--[[
+The commands as functions, for mappings and scripts (see :help topos-bible-lua). Arguments are
+what the command takes, as a string (`'-g Wisdom'`) or, for the searches, a list of words
+]]
+local function words(args)
+  return type(args) == 'table' and args or require('topos.search').split(args or '')
+end
+
+-- :ToposSearch [paths]
+function M.search(paths)
+  local args = words(paths)
+  local title = #args > 0 and ('Bible references in ' .. table.concat(args, ' ')) or 'Bible references'
+  require('topos.search').run(args, title)
+end
+
+-- :ToposQuery {args}
+function M.query(args)
+  args = words(args)
+  require('topos.search').run(args, 'topos ' .. table.concat(args, ' '))
+end
+
+-- :ToposExplicitOverlap [passage] and the others (the reference under the cursor by default)
+for _, kind in ipairs({ 'explicit_overlap', 'any_overlap', 'exact_overlap', 'inside', 'exclude_overlap' }) do
+  M[kind] = function(passage)
+    require('topos.search').passage(kind, passage)
+  end
+end
+
+-- :ToposBible [name]
+function M.bible(name)
+  require('topos.bibles').set_default(name)
+end
+
+-- :ToposParallel [name], with a split modifier like 'horizontal'
+function M.parallel(name, mods)
+  require('topos.bibles').parallel(name, mods)
+end
+
+-- :ToposRead [book] [bible], with a split modifier like 'vertical'
+function M.read(book, mods)
+  require('topos.read').read(book, mods)
+end
+
+-- :ToposNextBook, :ToposPrevChapter, ... (count: how many; 1 by default)
+for _, unit in ipairs({ 'book', 'chapter', 'verse' }) do
+  M['next_' .. unit] = function(count)
+    require('topos.read')[unit](count or 1)
+  end
+  M['prev_' .. unit] = function(count)
+    require('topos.read')[unit](-(count or 1))
+  end
+end
+
+-- :ToposBibleAdd {source}, :ToposBibleSearch [words], :ToposBibleRemove {id}
+function M.bible_add(source)
+  require('topos.packages').add(source)
+end
+
+function M.bible_search(query)
+  require('topos.packages').search(query)
+end
+
+function M.bible_remove(id)
+  require('topos.packages').remove(id)
+end
+
+-- :ToposBuild[!] (force: rebuild), then starts the language server
+function M.build(force)
+  require('topos.build').build(force, function(ok)
+    if ok then
+      M.start_lsp()
+    end
+  end)
+end
+
 -- For blink.cmp's `completion.documentation.draw`: colors passages in completion documentation
 function M.blink_draw(opts)
   require('topos.book').blink_draw(opts)

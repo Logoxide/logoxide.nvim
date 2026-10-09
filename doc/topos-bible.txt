@@ -91,8 +91,6 @@ them (see `auto_build`). Binaries on your PATH work too.
     -- { topos = '~/src/topos', biblix = '~/src/biblix' }; nil for GitHub
     source = nil,
     auto_build = true,
-    -- In a whole book, the next and previous book (false for none)
-    book_keys = { next = ']b', previous = '[b' },
     -- Past the end (or start), where |:ToposNextBook| and the others go:
     -- books 'wrap' (Revelation → Genesis) or 'stop'; chapters and verses
     -- 'next' (into the next book or chapter), 'wrap' (this book's or
@@ -209,6 +207,39 @@ completed with <Tab> (`John 3:` lists every verse).
 
 `:checkhealth topos` shows which binaries are used and whether they run.
 
+                                                            *topos-bible-lua*
+Each command is a function of `require('topos')` too, for mappings and
+scripts. They take what the command takes (a string, or a list of words for
+the searches); the moving ones take a count (1 by default): >lua
+  local topos = require('topos')
+  topos.search(paths)                   -- :ToposSearch
+  topos.query('-g Wisdom')              -- :ToposQuery
+  topos.explicit_overlap(passage)       -- :ToposExplicitOverlap, and
+  -- any_overlap, exact_overlap, inside, exclude_overlap
+  topos.read(book, mods)                -- :ToposRead ('John KJV', 'vertical')
+  topos.next_book(count)                -- :ToposNextBook, and prev_book,
+  -- next_chapter, prev_chapter, next_verse, prev_verse
+  topos.bible(name)                     -- :ToposBible
+  topos.parallel(name, mods)            -- :ToposParallel
+  topos.bible_search(words)             -- :ToposBibleSearch
+  topos.bible_add(source)               -- :ToposBibleAdd
+  topos.bible_remove(id)                -- :ToposBibleRemove
+  topos.lsp_start()                     -- :ToposLspStart
+  topos.build(force)                    -- :ToposBuild[!]
+<
+The plugin maps no keys. For moving through a whole book, for example: >lua
+  local topos = require('topos')
+  local function map(lhs, move)
+    vim.keymap.set('n', lhs, function() move(vim.v.count1) end)
+  end
+  map(']b', topos.next_book)
+  map('[b', topos.prev_book)
+  map(']c', topos.next_chapter)
+  map('[c', topos.prev_chapter)
+  map(']v', topos.next_verse)
+  map('[v', topos.prev_verse)
+<
+
 ==============================================================================
 3. TELESCOPE                                           *topos-bible-telescope*
 
@@ -254,9 +285,9 @@ the Bible. Its files are left out of workspace searches. Then:
   declaration (|vim.lsp.buf.declaration()|) open the whole book at the passage, in a buffer named like `topos-bible://BSB/JHN`. You
   can also open one with |:ToposRead| or `:edit topos-bible://BSB/JHN`. The
   buffer can't be changed (its 'filetype' is `topos-bible`, and it wraps long
-  paragraphs). `]b` and `[b` go to the next and previous book of its Bible
-  (with a count, that many books; `book_keys` changes them), and
-  |:ToposNextChapter| and the others move by chapter and verse. Its symbols
+  paragraphs). |:ToposNextBook|, |:ToposNextChapter|, |:ToposNextVerse|, and
+  their `:ToposPrev*` move by book, chapter, and verse (map them as
+  |topos-bible-lua| shows). Its symbols
   (|gO|, or Telescope's `lsp_document_symbols`) are its chapters and verses.
 - In that buffer, go to references (|grr|) on a verse lists every reference
   that names it in your workspace (explicit overlap: `John 3` doesn't count
