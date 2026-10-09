@@ -102,6 +102,18 @@ local commands = {
       desc = 'This whole book in another Bible, side by side on the same verse',
     },
   },
+  ToposRead = {
+    function(opts)
+      require('topos.read').read(opts.args, opts.mods)
+    end,
+    {
+      nargs = '*',
+      complete = function(...)
+        return require('topos.read').complete(...)
+      end,
+      desc = 'Open a whole book of the Bible (choose one without a book)',
+    },
+  },
   ToposBibleAdd = {
     function(opts)
       require('topos.packages').add(opts.args)
@@ -156,6 +168,18 @@ for name, kind in pairs(passages) do
       desc = search.kinds[kind].title:format('{passage}') .. ' (the reference under the cursor by default)',
     },
   }
+end
+
+-- :ToposNextBook, :ToposPrevVerse, ... in a whole book (with a count, that many)
+for unit, desc in pairs({ Book = 'book', Chapter = 'chapter', Verse = 'verse' }) do
+  for direction, step in pairs({ Next = 1, Prev = -1 }) do
+    commands['Topos' .. direction .. unit] = {
+      function(opts)
+        require('topos.read')[desc](step * math.max(opts.count, 1))
+      end,
+      { count = 1, desc = ('In a whole book, the %s %s'):format(direction == 'Next' and 'next' or 'previous', desc) },
+    }
+  end
 end
 
 function M.create()

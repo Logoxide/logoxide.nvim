@@ -74,6 +74,20 @@ M.defaults = {
   source = nil,
   -- Build the binaries when setup can't find them (takes a few minutes the first time)
   auto_build = true,
+  -- In a whole book, the keys for the next and previous book (false for none)
+  book_keys = { next = ']b', previous = '[b' },
+  -- Where :ToposNextBook, :ToposNextChapter, :ToposNextVerse (and :ToposPrev*) go past the end
+  -- (or start)
+  navigation = {
+    -- 'wrap' (Revelation → Genesis) or 'stop'
+    books = 'wrap',
+    -- 'next' (the next book's first chapter, as `books` says), 'wrap' (this book's first), or
+    -- 'stop'
+    chapters = 'next',
+    -- 'next' (the next chapter's first verse, as `chapters` says), 'wrap' (this chapter's
+    -- first), or 'stop'
+    verses = 'next',
+  },
   -- 'telescope', 'quickfix', or 'auto' (Telescope if it is installed)
   picker = 'auto',
 }

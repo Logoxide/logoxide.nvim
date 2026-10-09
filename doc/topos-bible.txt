@@ -26,7 +26,7 @@ With lazy.nvim: >lua
     ft = { 'markdown', 'text' },
     cmd = { 'ToposSearch', 'ToposQuery', 'ToposExplicitOverlap', 'ToposAnyOverlap',
             'ToposExactOverlap', 'ToposInside', 'ToposExcludeOverlap', 'ToposBuild', 'ToposLspStart',
-            'ToposBibleAdd', 'ToposBibleSearch', 'ToposBibleRemove' },
+            'ToposRead', 'ToposBibleAdd', 'ToposBibleSearch', 'ToposBibleRemove' },
     opts = {
       bible = '~/Bibles/BSB',
       settings = { format = 'abbreviation', ['inlay-hints'] = 'never' },
@@ -91,6 +91,13 @@ them (see `auto_build`). Binaries on your PATH work too.
     -- { topos = '~/src/topos', biblix = '~/src/biblix' }; nil for GitHub
     source = nil,
     auto_build = true,
+    -- In a whole book, the next and previous book (false for none)
+    book_keys = { next = ']b', previous = '[b' },
+    -- Past the end (or start), where |:ToposNextBook| and the others go:
+    -- books 'wrap' (Revelation → Genesis) or 'stop'; chapters and verses
+    -- 'next' (into the next book or chapter), 'wrap' (this book's or
+    -- chapter's first), or 'stop'
+    navigation = { books = 'wrap', chapters = 'next', verses = 'next' },
     -- 'auto' (Telescope if installed), 'telescope', or 'quickfix'
     picker = 'auto',
   }
@@ -140,6 +147,34 @@ completed with <Tab> (`John 3:` lists every verse).
                         choose with |vim.ui.select()|). It lasts until
                         Neovim quits; `default_bible` sets it for good.
 
+                                                                  *:ToposRead*
+:ToposRead [book] [name]
+                        Opens a whole book (`topos-bible://BSB/JHN`): `John`,
+                        `1 cor`, or `JHN`, in the Bible named after
+                        it (`:ToposRead John KJV`), else the current whole
+                        book's Bible, else the default. Without a book,
+                        chooses one: in Telescope, previewing each book as
+                        it reads (colored as in a whole book), else with
+                        |vim.ui.select()|. Takes a modifier to open it in a
+                        split (`:vertical ToposRead Romans`). Books and Bible
+                        names are completed with <Tab>. Starts biblix-lsp if it
+                        isn't running (as `:edit topos-bible://...` does).
+
+                                    *:ToposNextBook* *:ToposPrevBook*
+                              *:ToposNextChapter* *:ToposPrevChapter*
+                                  *:ToposNextVerse* *:ToposPrevVerse*
+:[count]ToposNextBook   In a whole book, go to the next book of its Bible
+:[count]ToposPrevBook   (or the previous one), the next chapter (its label),
+:[count]ToposNextChapter
+:[count]ToposPrevChapter
+:[count]ToposNextVerse  or the next verse (with a count, that many). Past the
+:[count]ToposPrevVerse  end (or start), `navigation` says where: by default
+                        books wrap (Revelation → Genesis), chapters go on to
+                        the next book, and verses to the next chapter (and
+                        on to the next book). Each move is in the
+                        |jumplist|. For mappings: >lua
+  vim.keymap.set('n', ']v', '<Cmd>ToposNextVerse<CR>')
+<
                                                               *:ToposParallel*
 :ToposParallel [name]   In a whole book (`topos-bible://BSB/JHN`), opens the
                         same book in another Bible in a split, at the verse
@@ -217,8 +252,12 @@ the Bible. Its files are left out of workspace searches. Then:
   (with 'completeopt' "popup", or your completion plugin's documentation).
 - Go to definition (|CTRL-]|, or |vim.lsp.buf.definition()|) and go to
   declaration (|vim.lsp.buf.declaration()|) open the whole book at the passage, in a buffer named like `topos-bible://BSB/JHN`. You
-  can also open one with `:edit topos-bible://BSB/JHN`. The buffer can't be
-  changed (its 'filetype' is `topos-bible`, and it wraps long paragraphs).
+  can also open one with |:ToposRead| or `:edit topos-bible://BSB/JHN`. The
+  buffer can't be changed (its 'filetype' is `topos-bible`, and it wraps long
+  paragraphs). `]b` and `[b` go to the next and previous book of its Bible
+  (with a count, that many books; `book_keys` changes them), and
+  |:ToposNextChapter| and the others move by chapter and verse. Its symbols
+  (|gO|, or Telescope's `lsp_document_symbols`) are its chapters and verses.
 - In that buffer, go to references (|grr|) on a verse lists every reference
   that names it in your workspace (explicit overlap: `John 3` doesn't count
   for John 3:16); on a chapter's label, every reference that shares a verse

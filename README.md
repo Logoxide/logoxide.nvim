@@ -16,7 +16,9 @@ With [lazy.nvim](https://lazy.folke.io):
   ft = { 'markdown', 'text' },
   cmd = { 'ToposSearch', 'ToposQuery', 'ToposExplicitOverlap', 'ToposAnyOverlap',
           'ToposExactOverlap', 'ToposInside', 'ToposExcludeOverlap', 'ToposBuild', 'ToposLspStart',
-          'ToposBible', 'ToposParallel', 'ToposBibleAdd', 'ToposBibleSearch', 'ToposBibleRemove' },
+          'ToposBible', 'ToposParallel', 'ToposRead', 'ToposBibleAdd', 'ToposBibleSearch',
+          'ToposBibleRemove', 'ToposNextBook', 'ToposPrevBook', 'ToposNextChapter',
+          'ToposPrevChapter', 'ToposNextVerse', 'ToposPrevVerse' },
   opts = {
     -- A folder of USX files, one book each (JHN.usx): hover shows the text, and go to
     -- definition opens the whole book
@@ -59,6 +61,12 @@ With [lazy.nvim](https://lazy.folke.io):
   the whole book in a read-only buffer at the passage, with verse numbers, chapters, headings,
   words of Jesus, and so on written and colored the way `markup` says. Go to references on a
   verse there lists every reference to it in your notes, and hovering it counts them
+- **Reading**: `:ToposRead John` opens a whole book (`1 cor` and `JHN` work too, and
+  `:ToposRead John KJV` another Bible's), and `:ToposRead` alone chooses one in Telescope,
+  previewing each book colored as it reads. In a book, `]b` and `[b` go to the next and
+  previous book, and `:ToposNextBook`, `:ToposNextChapter`, `:ToposNextVerse` (and
+  `:ToposPrev*`) are there to map; `navigation` says what happens past the end (by default
+  books wrap, chapters go on to the next book, and verses to the next chapter)
 - **Several Bibles**: with `bibles`, a reference followed by a Bible's name (`John 3:16 KJV`)
   uses that Bible for hover, go to definition, completion, insertions, and its own verse counts;
   `:ToposBible KJV` changes the default, and `:ToposParallel KJV` opens the same book in another

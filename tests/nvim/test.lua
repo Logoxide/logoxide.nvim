@@ -234,6 +234,60 @@ do
   -- The next run (with Telescope) uses the same workspace
   os.remove(WORK .. "/ws/kjv.txt")
 end
+-- :ToposRead: a book by name, the next and previous book, another Bible, and the picker
+do
+  vim.cmd("ToposRead jn")
+  log("read", vim.api.nvim_buf_get_name(0), vim.bo.filetype)
+  vim.cmd("normal ]b")
+  local next_book = vim.api.nvim_buf_get_name(0)
+  vim.cmd("normal [b")
+  log("read next", next_book, vim.api.nvim_buf_get_name(0))
+  vim.cmd("ToposRead John AV")
+  log("read bible", vim.api.nvim_buf_get_name(0))
+  log("read complete", table.concat(vim.fn.getcompletion("ToposRead Ro", "cmdline"), "|"),
+    table.concat(vim.fn.getcompletion("ToposRead Romans K", "cmdline"), "|"))
+  -- Moving by verse, chapter, and book: where the cursor lands (the book, and what follows it)
+  local function where()
+    local col = vim.api.nvim_win_get_cursor(0)[2]
+    return vim.api.nvim_buf_get_name(0):match("%u+$") .. ":" .. vim.api.nvim_get_current_line():sub(col + 1, col + 4)
+  end
+  local function moves(...)
+    local seen = {}
+    for _, cmd in ipairs({ ... }) do vim.cmd(cmd); table.insert(seen, where()) end
+    return table.concat(seen, " ")
+  end
+  vim.cmd("ToposRead John BSB")
+  vim.api.nvim_win_set_cursor(0, { 1, 0 })
+  -- Past John's last verse, the next chapter: Romans 8 (the next book); back again
+  log("move verses", moves("ToposNextVerse", "ToposNextVerse", "ToposNextVerse", "ToposPrevVerse", "ToposPrevVerse"))
+  log("move chapters", moves("ToposNextChapter", "ToposNextChapter", "ToposPrevChapter"))
+  -- Books wrap (Romans → John) unless `navigation` says not to; verses can wrap in their chapter
+  log("move books", moves("ToposNextBook", "ToposNextBook", "3ToposPrevBook"))
+  local navigation = require("topos.config").options.navigation
+  navigation.books, navigation.verses = "stop", "wrap"
+  vim.cmd("ToposRead John BSB")
+  vim.api.nvim_win_set_cursor(0, { 1, 0 })
+  log("move wrap", moves("ToposPrevBook", "ToposNextVerse", "ToposNextVerse", "ToposNextVerse"))
+  navigation.books, navigation.verses = "wrap", "next"
+  if telescope then
+    vim.o.columns, vim.o.lines = 200, 50 -- wide enough for Telescope's previewer
+    vim.cmd("ToposRead")
+    vim.wait(5000, function() return vim.bo.filetype == "TelescopePrompt" end)
+    local picker = require("telescope.actions.state").get_current_picker(vim.api.nvim_get_current_buf())
+    -- The selected book (the current one, the BSB's John) previewed with its colors
+    local preview
+    vim.wait(3000, function()
+      preview = picker.previewer and picker.previewer.state and picker.previewer.state.bufnr
+      return preview and #vim.api.nvim_buf_get_extmarks(preview, -1, 0, -1, {}) > 0
+    end)
+    assert(preview, "no preview")
+    local marks = vim.api.nvim_buf_get_extmarks(preview, -1, 0, -1, { details = true })
+    log("read picker", picker.prompt_title, picker.manager:num_results(), vim.api.nvim_buf_get_lines(preview, 0, 1, false)[1],
+      marks[1] and marks[1][4].hl_group)
+    require("telescope.actions").close(vim.api.nvim_get_current_buf())
+    vim.wait(100)
+  end
+end
 vim.cmd("buffer " .. WORK .. "/ws/open.txt")
 -- :ToposLspStart in an unnamed buffer with no file type, then again to restart
 local first = vim.lsp.get_clients({ name = "topos" })[1].id
@@ -289,6 +343,17 @@ do
   require("topos.health").check()
   vim.health = health
   log("health bibles", oks)
+end
+-- :ToposRead starts biblix-lsp when it isn't running
+do
+  for _, c in ipairs(vim.lsp.get_clients({ name = "topos" })) do c:stop(true) end
+  vim.wait(3000, function() return #vim.lsp.get_clients({ name = "topos" }) == 0 end)
+  for _, b in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_get_name(b):find("^topos%-bible://") then vim.api.nvim_buf_delete(b, { force = true }) end
+  end
+  vim.cmd("enew")
+  vim.cmd("ToposRead Romans")
+  log("read starts lsp", #vim.lsp.get_clients({ name = "topos" }), vim.api.nvim_buf_get_name(0), vim.api.nvim_buf_line_count(0) > 1)
 end
 end, debug.traceback)
 if not ok then log("ERROR", err) end

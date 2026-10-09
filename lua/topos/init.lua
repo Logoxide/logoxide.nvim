@@ -160,6 +160,40 @@ function M.lsp_start()
   vim.notify(('topos: %s biblix-lsp'):format(#running > 0 and 'restarted' or 'started'))
 end
 
+--[[
+The running biblix-lsp client, else one started for the current folder (attached to no buffer)
+once it has initialized; nil after saying why if it can't start. For :ToposRead and whole books,
+which need the server even when no note has started it
+]]
+function M.ensure_lsp()
+  local running = vim.lsp.get_clients({ name = 'topos' })[1]
+  if running then
+    return running
+  end
+  local path = bin.path('lsp')
+  if not path then
+    vim.notify('topos: biblix-lsp is not built yet; run :ToposBuild', vim.log.levels.ERROR)
+    return nil
+  end
+  local base = lsp_config(path)
+  local bufnr = vim.api.nvim_get_current_buf()
+  local client_id = vim.lsp.start({
+    name = 'topos',
+    cmd = base.cmd,
+    root_dir = vim.fs.root(bufnr, base.root_markers) or vim.fn.getcwd(),
+    init_options = base.init_options,
+    settings = base.settings,
+  }, { bufnr = bufnr, attach = false })
+  local client = client_id and vim.lsp.get_client_by_id(client_id)
+  if not client or not vim.wait(5000, function()
+    return client.initialized
+  end, 20) then
+    vim.notify('topos: biblix-lsp did not start', vim.log.levels.ERROR)
+    return nil
+  end
+  return client
+end
+
 -- Reformat actions in unnamed buffers carry their edits, for the buffer they came from (an
 -- unnamed buffer's URI, `file://`, names no buffer a workspace edit could reach)
 local function apply_edits_command(command, ctx)

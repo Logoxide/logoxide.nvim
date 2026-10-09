@@ -65,14 +65,15 @@ local function client_for(bufnr)
       return client
     end
   end
-  return vim.lsp.get_clients({ name = 'topos' })[1]
+  -- Started if it isn't running (`:edit topos-bible://BSB/JHN` before any note)
+  return require('topos').ensure_lsp()
 end
 
 -- Fills a `topos-bible://` buffer with its book, read-only, and attaches the language server
 function M.read(bufnr, uri)
   local client = client_for(bufnr)
   if not client then
-    return vim.notify('topos: biblix-lsp is not running, so it can\'t open ' .. uri, vim.log.levels.ERROR)
+    return
   end
   local response, err = client:request_sync('topos/book', { uri = uri }, 10000, bufnr)
   if not response or response.err then

@@ -28,6 +28,12 @@ cat > "$WORK/Bibles/BSB/JHN.usx" <<'USX'
 <para style="p"><verse number="16" style="v" sid="JHN 3:16"/>For God so loved the world. <verse eid="JHN 3:16"/><verse number="17" style="v" sid="JHN 3:17"/>Jesus said, <char style="wj">I did not come to condemn.</char><verse eid="JHN 3:17"/></para>
 <chapter eid="JHN 3"/></usx>
 USX
+cat > "$WORK/Bibles/BSB/ROM.usx" <<'USX'
+<usx version="3.0"><book code="ROM" style="id">x</book>
+<chapter number="8" style="c" sid="ROM 8"/>
+<para style="p"><verse number="28" style="v" sid="ROM 8:28"/>And we know that God works all things together for good.<verse eid="ROM 8:28"/></para>
+<chapter eid="ROM 8"/></usx>
+USX
 # Another Bible, named KJV (alias AV) in `bibles`, with only John 3:16
 mkdir -p "$WORK/Bibles/KJV"
 cat > "$WORK/Bibles/KJV/JHN.usx" <<'USX'
@@ -81,6 +87,11 @@ check() {
     'missing in KJV John 3:17 does not exist in the KJV' 'set default hover *KJV*' \
     'parallel topos-bible://KJV/JHN [16] For God so loved the world, that he gave his only begotten Son.' \
     'parallel follows John 3' 'health bibles 2' \
+    'read topos-bible://BSB/JHN topos-bible' 'read next topos-bible://BSB/ROM topos-bible://BSB/JHN' \
+    'read bible topos-bible://KJV/JHN' 'read complete Romans KJV' \
+    'move verses JHN:[16] JHN:[17] ROM:[28] JHN:[17] JHN:[16]' 'move chapters ROM:Roma JHN:John ROM:Roma' \
+    'move books JHN:John ROM:Roma JHN:John' 'move wrap JHN:John JHN:[16] JHN:[17] JHN:[16]' \
+    'read starts lsp 1 topos-bible://BSB/ROM true' \
     'unnamed before 0' 'unnamed after 1 John 3:16' 'unnamed reformat Read John 3:16 today' 'unnamed edited Romans 8:28' 'restarted 1 true true true'; do
     if ! grep -qxF "$line" <<<"$output"; then
       echo "FAIL ($name): expected '$line'"
@@ -96,6 +107,7 @@ if [[ -d "$plugins/telescope.nvim" && -d "$plugins/plenary.nvim" ]]; then
   output=$(run WITH_TELESCOPE=1 PLUGINS="$plugins")
   check telescope "$output"
   grep -q 'telescope ext Search "Rom 8:28" for explicit overlap 1' <<<"$output" || { echo "FAIL (telescope extension)"; status=1; }
+  grep -qxF 'read picker Read BSB 2 John @lsp.type.heading.topos-bible' <<<"$output" || { echo "FAIL (telescope :ToposRead)"; grep '^read picker' <<<"$output"; status=1; }
 else
   echo "skipped (telescope): not found in $plugins"
 fi
