@@ -16,7 +16,7 @@ With [lazy.nvim](https://lazy.folke.io):
   ft = { 'markdown', 'text' },
   cmd = { 'ToposSearch', 'ToposQuery', 'ToposExplicitOverlap', 'ToposAnyOverlap',
           'ToposExactOverlap', 'ToposInside', 'ToposExcludeOverlap', 'ToposBuild', 'ToposLspStart',
-          'ToposBible', 'ToposParallel' },
+          'ToposBible', 'ToposParallel', 'ToposBibleAdd', 'ToposBibleSearch', 'ToposBibleRemove' },
   opts = {
     -- A folder of USX files, one book each (JHN.usx): hover shows the text, and go to
     -- definition opens the whole book
@@ -63,6 +63,11 @@ With [lazy.nvim](https://lazy.folke.io):
   uses that Bible for hover, go to definition, completion, insertions, and its own verse counts;
   `:ToposBible KJV` changes the default, and `:ToposParallel KJV` opens the same book in another
   Bible next to the current one, kept on the same verse
+- **Installing Bibles** (biblix packages, with `bx`): `:ToposBibleSearch world english` searches
+  the catalogs (eBible.org's and fetch.bible's translations) and installs the one you choose,
+  `:ToposBibleAdd https://...` adds a package from its git repository (or `ebible:<id>`,
+  `fetch:<id>`), and `:ToposBibleRemove id` removes one. They use the current folder's
+  `biblix.toml` (else the library's own), like biblix-lsp, which restarts to read them
 - **Insertions**: code actions that write a passage below its reference (like an Obsidian
   callout), in place of its line, or in place of the reference
 - **Commands**: `:ToposSearch` (every reference), `:ToposQuery -g Wisdom` (the CLI's options,
@@ -86,10 +91,10 @@ The plugin and the CLI share `~/.config/topos/config.toml`. See `:help topos-bib
 
 ## Building
 
-`:ToposBuild` installs `biblix-lsp` (from biblix) and `topos` (from topos) into the plugin's
+`:ToposBuild` installs `biblix-lsp` and `bx` (from biblix) and `topos` (from topos) into the plugin's
 `build/` folder with `cargo install`, from checkouts if you set `source = '~/path/to/topos'` (with
 biblix beside it) or `source = { topos = ..., biblix = ... }`, else from GitHub. biblix-lsp
-can't be installed from GitHub until biblix is published, so use checkouts for now. Binaries on your `PATH` work too, and `cmd = { lsp = ..., cli = ... }`
+can't be installed from GitHub until biblix is published, so use checkouts for now. Binaries on your `PATH` work too, and `cmd = { lsp = ..., cli = ..., bx = ... }`
 picks them yourself.
 
 ## Tests

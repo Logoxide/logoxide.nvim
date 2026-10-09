@@ -1,5 +1,5 @@
--- Building biblix-lsp (the language server, from biblix) and topos (the CLI, from topos) with
--- Cargo, from checkouts (`source`) or GitHub
+-- Building biblix-lsp (the language server) and bx (installing Bibles), from biblix, and topos (the
+-- CLI, from topos) with Cargo, from checkouts (`source`) or GitHub
 local bin = require('topos.bin')
 local config = require('topos.config')
 
@@ -43,6 +43,7 @@ function M.commands()
   end
   return {
     biblix and install(biblix, 'biblix-lsp') or from_git(M.repositories.biblix, 'biblix-lsp'),
+    biblix and install(biblix, 'bx') or from_git(M.repositories.biblix, 'bx'),
     topos and install(topos, 'topos-cli') or from_git(M.repositories.topos, 'topos-bible-cli'),
   }
 end
@@ -61,10 +62,10 @@ local function run(commands, done)
   end)
 end
 
--- Builds unless both binaries are already there (`force` builds anyway); `done(ok)` runs after
+-- Builds unless the binaries are already there (`force` builds anyway); `done(ok)` runs after
 function M.build(force, done)
   done = done or function() end
-  if not force and bin.path('lsp') and bin.path('cli') then
+  if not force and bin.path('lsp') and bin.path('cli') and bin.path('bx') then
     vim.notify('topos: already built (use :ToposBuild! to rebuild)')
     return done(true)
   end
@@ -74,7 +75,7 @@ function M.build(force, done)
   end
   local topos, biblix = M.sources()
   vim.notify(
-    ('topos: building biblix-lsp from %s and topos from %s (this takes a few minutes the first time)...'):format(
+    ('topos: building biblix-lsp and bx from %s and topos from %s (this takes a few minutes the first time)...'):format(
       biblix or M.repositories.biblix,
       topos or M.repositories.topos
     )
@@ -82,7 +83,7 @@ function M.build(force, done)
   run(M.commands(), function(ok, stderr)
     vim.schedule(function()
       if ok then
-        vim.notify('topos: built biblix-lsp and topos')
+        vim.notify('topos: built biblix-lsp, bx, and topos')
         done(true)
       else
         local lines = vim.split(stderr or '', '\n', { trimempty = true })

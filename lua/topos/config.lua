@@ -67,7 +67,7 @@ M.defaults = {
     settings = {},
   },
   -- Paths to the binaries; nil uses the plugin's own build, then your PATH
-  cmd = { lsp = nil, cli = nil },
+  cmd = { lsp = nil, cli = nil, bx = nil },
   -- What :ToposBuild builds from: a topos checkout ('~/src/topos', with biblix beside it), or
   -- { topos = '~/src/topos', biblix = '~/src/biblix' }; nil for GitHub (biblix-lsp can't be
   -- installed from GitHub until biblix is published, so set a biblix checkout for now)

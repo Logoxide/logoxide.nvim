@@ -5,12 +5,16 @@ function M.check()
   local bin = require('topos.bin')
   local config = require('topos.config')
   vim.health.start('topos-bible.nvim')
-  for _, kind in ipairs({ 'lsp', 'cli' }) do
-    local name = kind == 'lsp' and 'biblix-lsp' or 'topos'
+  local names = { lsp = 'biblix-lsp', cli = 'topos', bx = 'bx' }
+  for _, kind in ipairs({ 'lsp', 'cli', 'bx' }) do
+    local name = names[kind]
     local path = bin.path(kind)
     if path then
       local version = vim.system({ path, '--version' }, { text = true }):wait().stdout or ''
       vim.health.ok(('%s: %s %s'):format(name, path, vim.trim(version)))
+    elseif kind == 'bx' then
+      -- Only installing Bibles needs it
+      vim.health.warn('bx not found: :ToposBibleAdd and :ToposBibleSearch need it', { 'Run :ToposBuild!' })
     else
       vim.health.error(name .. ' not found', { 'Run :ToposBuild (needs Rust: https://rustup.rs)' })
     end

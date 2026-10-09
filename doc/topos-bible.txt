@@ -25,7 +25,8 @@ With lazy.nvim: >lua
     dependencies = { 'nvim-telescope/telescope.nvim' }, -- optional
     ft = { 'markdown', 'text' },
     cmd = { 'ToposSearch', 'ToposQuery', 'ToposExplicitOverlap', 'ToposAnyOverlap',
-            'ToposExactOverlap', 'ToposInside', 'ToposExcludeOverlap', 'ToposBuild', 'ToposLspStart' },
+            'ToposExactOverlap', 'ToposInside', 'ToposExcludeOverlap', 'ToposBuild', 'ToposLspStart',
+            'ToposBibleAdd', 'ToposBibleSearch', 'ToposBibleRemove' },
     opts = {
       bible = '~/Bibles/BSB',
       settings = { format = 'abbreviation', ['inlay-hints'] = 'never' },
@@ -147,8 +148,26 @@ completed with <Tab> (`John 3:` lists every verse).
                         split (`:horizontal ToposParallel KJV`; vertical by
                         default).
 
+                                                            *:ToposBibleSearch*
+:ToposBibleSearch {words}
+                        Searches the catalogs (eBible.org's and fetch.bible's
+                        translations, or those `biblix.toml` names) by name,
+                        abbreviation, or language, and installs the Bible
+                        chosen with |vim.ui.select()|. Runs `bx` in the
+                        current folder: its `biblix.toml`, else the
+                        library's own. biblix-lsp restarts to read it.
+
+                                                               *:ToposBibleAdd*
+:ToposBibleAdd {source} Installs a Bible: a biblix package's git URL (its
+                        newest release), or `ebible:<id>` / `fetch:<id>`
+                        (imported from eBible.org or fetch.bible).
+
+                                                            *:ToposBibleRemove*
+:ToposBibleRemove {id}  Removes a package from `biblix.toml` (`bx clean
+                        --remove` deletes versions nothing uses).
+
                                                                  *:ToposBuild*
-:ToposBuild[!]          Builds biblix-lsp and topos if they are missing (!
+:ToposBuild[!]          Builds biblix-lsp, bx, and topos if they are missing (!
                         rebuilds), then starts the language server. It
                         runs `cargo install` into the plugin's build/
                         folder, from GitHub or `source`.

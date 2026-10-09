@@ -21,13 +21,16 @@ function M.built(name)
   return vim.fs.joinpath(M.build_root(), 'bin', name .. exe)
 end
 
--- The binary to run for 'lsp' (biblix-lsp) or 'cli' (topos), or nil if there is none
+local names = { lsp = 'biblix-lsp', cli = 'topos', bx = 'bx' }
+
+-- The binary to run for 'lsp' (biblix-lsp), 'cli' (topos), or 'bx' (biblix's), or nil if there
+-- is none
 function M.path(kind)
   local configured = config.options.cmd[kind]
   if configured then
     return vim.fn.executable(configured) == 1 and configured or nil
   end
-  local name = kind == 'lsp' and 'biblix-lsp' or 'topos'
+  local name = names[kind]
   local built = M.built(name)
   if vim.fn.executable(built) == 1 then
     return built

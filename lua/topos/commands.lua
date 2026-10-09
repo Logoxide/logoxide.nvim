@@ -102,6 +102,30 @@ local commands = {
       desc = 'This whole book in another Bible, side by side on the same verse',
     },
   },
+  ToposBibleAdd = {
+    function(opts)
+      require('topos.packages').add(opts.args)
+    end,
+    { nargs = 1, desc = 'Install a Bible: a biblix package\'s git URL, or ebible:<id> / fetch:<id>' },
+  },
+  ToposBibleSearch = {
+    function(opts)
+      require('topos.packages').search(opts.args)
+    end,
+    { nargs = '*', desc = 'Search the catalogs (eBible.org, fetch.bible) for a Bible to install' },
+  },
+  ToposBibleRemove = {
+    function(opts)
+      require('topos.packages').remove(opts.args)
+    end,
+    {
+      nargs = 1,
+      complete = function()
+        return require('topos.packages').ids()
+      end,
+      desc = 'Remove a Bible package from biblix.toml',
+    },
+  },
   ToposBuild = {
     function(opts)
       require('topos.build').build(opts.bang, function(ok)
