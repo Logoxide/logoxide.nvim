@@ -6,8 +6,8 @@ local config = require('logoxide.config')
 local M = {}
 
 M.repositories = {
-  topos = 'https://github.com/MasterTemple/logoxide',
-  logoxide = 'https://github.com/MasterTemple/logoxide',
+  topos = 'https://github.com/MasterTemple/topos-bible',
+  logoxide = 'https://github.com/Logoxide/logoxide',
 }
 
 -- The checkouts to build from: `source` is a topos checkout, or { topos = ..., logoxide = ... };
@@ -48,7 +48,7 @@ function M.commands()
   end
   return {
     lsp,
-    logoxide and install(logoxide, 'lx') or from_git(M.repositories.logoxide, 'lx'),
+    logoxide and install(logoxide, 'lx') or from_git(M.repositories.logoxide, 'logoxide-cli'),
     topos and install(topos, 'topos-cli') or from_git(M.repositories.topos, 'topos-bible-cli'),
   }
 end

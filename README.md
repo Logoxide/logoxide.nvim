@@ -1,14 +1,14 @@
 # logoxide.nvim
 
 Find, search, and complete Bible references in your notes, and read the passages they point to.
-It runs logoxide's language server (`logoxide-lsp`, which was [topos](https://github.com/MasterTemple/logoxide)'s `topos-lsp`)
+It runs logoxide's language server (`logoxide-lsp`, which was [topos](https://github.com/MasterTemple/topos-bible)'s `topos-lsp`)
 and searches with topos's CLI (`topos`).
 
 With [lazy.nvim](https://lazy.folke.io):
 
 ```lua
 {
-  'MasterTemple/logoxide.nvim',
+  'Logoxide/logoxide.nvim',
   main = 'logoxide',
   -- Builds logoxide-lsp and topos with Cargo (needs Rust: https://rustup.rs)
   build = ':LxBuild!',

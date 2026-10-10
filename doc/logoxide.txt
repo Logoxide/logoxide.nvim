@@ -19,7 +19,7 @@ shows a reference's text and go-to-definition opens the whole book.
 
 With lazy.nvim: >lua
   {
-    'MasterTemple/logoxide.nvim',
+    'Logoxide/logoxide.nvim',
     main = 'logoxide',
     build = ':LxBuild!',
     dependencies = { 'nvim-telescope/telescope.nvim' }, -- optional
