@@ -54,6 +54,13 @@ M.defaults = {
   -- Search PDFs the same way, building logoxide-lsp with PDF support (MuPDF: needs a C compiler and
   -- takes longer)
   pdf = false,
+  -- Commentaries whose notes on a passage hover shows after its text, each labeled with the
+  -- commentary's name and the verses the note covers: true for every commentary the project
+  -- uses (lx add them), or their ids, like { 'mhcc' }. Off by default
+  commentaries = nil,
+  -- Hovering a Strong's number (G25, H430, G0025) shows its entry in the project's Strong's
+  -- dictionaries (lexicons with keys = "strongs-greek" or "strongs-hebrew"). Off by default
+  strongs = false,
   -- Ways to insert a passage's text below a reference, each a code action ("Insert Callout"):
   --   name         the action is "Insert {name}"
   --   display      what is inserted: {text} (the passage), {reference} (John 3:16), {osis}
@@ -122,7 +129,7 @@ local function expanded_bibles()
 end
 
 -- The language server's settings: `bible`, `bibles`, `default_bible`, `hover_bibles`, `markup`,
--- `insertions`, `epub`, and `pdf`, then `lsp.settings`, then the top-level `settings`
+-- `insertions`, `epub`, `pdf`, `commentaries`, and `strongs`, then `lsp.settings`, then the top-level `settings`
 function M.lsp_settings()
   local base = { markup = M.options.markup, insertions = M.options.insertions }
   if M.options.bible then
@@ -138,6 +145,10 @@ function M.lsp_settings()
   end
   if M.options.pdf then
     base.pdf = true
+  end
+  base.commentaries = M.options.commentaries
+  if M.options.strongs then
+    base.strongs = true
   end
   return vim.tbl_deep_extend('force', base, M.options.lsp.settings or {}, M.options.settings or {})
 end
