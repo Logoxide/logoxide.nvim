@@ -1,22 +1,22 @@
 --[[
-Several Bibles (`bible` and `bibles`): which one references use by default (:ToposBible), and a
-whole book next to the same book in another Bible, kept on the same verse (:ToposParallel).
+Several Bibles (`bible` and `bibles`): which one references use by default (:LxBible), and a
+whole book next to the same book in another Bible, kept on the same verse (:LxParallel).
 ]]
-local config = require('topos.config')
+local config = require('logoxide.config')
 
 local M = {}
 
 local function client()
-  return vim.lsp.get_clients({ name = 'topos' })[1]
+  return vim.lsp.get_clients({ name = 'logoxide' })[1]
 end
 
--- biblix-lsp's Bibles, the default first: { { name, aliases, books } }
+-- logoxide-lsp's Bibles, the default first: { { name, aliases, books } }
 function M.list()
   local c = client()
   if not c then
     return {}
   end
-  local response = c:request_sync('topos/bibles', vim.empty_dict(), 5000, 0)
+  local response = c:request_sync('logoxide/bibles', vim.empty_dict(), 5000, 0)
   return response and response.result and response.result.bibles or {}
 end
 
@@ -27,9 +27,9 @@ function M.names()
   end, M.list())
 end
 
--- The Bible of a `topos-bible://BSB/JHN` buffer
+-- The Bible of a `logoxide://BSB/JHN` buffer
 local function bible_of(bufnr)
-  local name = vim.api.nvim_buf_get_name(bufnr):match('^topos%-bible://([^/]+)/')
+  local name = vim.api.nvim_buf_get_name(bufnr):match('^logoxide://([^/]+)/')
   return name and vim.uri_decode(name)
 end
 
@@ -39,7 +39,7 @@ local function choose(prompt, except, done)
     return name ~= except
   end, M.names())
   if #names == 0 then
-    return vim.notify('topos: no other Bible (set `bible` or `bibles`)', vim.log.levels.WARN)
+    return vim.notify('logoxide: no other Bible (set `bible` or `bibles`)', vim.log.levels.WARN)
   end
   vim.ui.select(names, { prompt = prompt }, function(name)
     if name then
@@ -48,15 +48,15 @@ local function choose(prompt, except, done)
   end)
 end
 
--- :ToposBible [name]: references that name no Bible use this one (without a name, choose one)
+-- :LxBible [name]: references that name no Bible use this one (without a name, choose one)
 function M.set_default(name)
   if not name or name == '' then
     local current = M.list()[1]
     return choose('Default Bible' .. (current and (' (now ' .. current.name .. ')') or ''), nil, M.set_default)
   end
   config.options.default_bible = name
-  local settings = { topos = config.lsp_settings() }
-  for _, c in ipairs(vim.lsp.get_clients({ name = 'topos' })) do
+  local settings = { logoxide = config.lsp_settings() }
+  for _, c in ipairs(vim.lsp.get_clients({ name = 'logoxide' })) do
     c.settings = settings
     c:notify('workspace/didChangeConfiguration', { settings = settings })
   end
@@ -76,9 +76,9 @@ local function same_verse(win, bible, done)
     position = { line = cursor[1] - 1, character = vim.str_utfindex(line, 'utf-16', cursor[2], false) },
     bible = bible,
   }
-  c:request('topos/sameVerse', params, function(err, location)
+  c:request('logoxide/sameVerse', params, function(err, location)
     if err then
-      return vim.notify('topos: ' .. err.message, vim.log.levels.ERROR)
+      return vim.notify('logoxide: ' .. err.message, vim.log.levels.ERROR)
     end
     done(location)
   end, bufnr)
@@ -100,7 +100,7 @@ end
 
 -- Keeps each window of a pair on the verse the other's cursor is on, until one closes
 local function link(a, b)
-  local group = vim.api.nvim_create_augroup(('topos_parallel_%d_%d'):format(a, b), { clear = true })
+  local group = vim.api.nvim_create_augroup(('logoxide_parallel_%d_%d'):format(a, b), { clear = true })
   local function sync(from, to)
     local bible = bible_of(vim.api.nvim_win_get_buf(to))
     if bible then
@@ -131,13 +131,13 @@ local function link(a, b)
   })
 end
 
--- :ToposParallel [name]: this whole book in another Bible, in a split at the same verse, and
+-- :LxParallel [name]: this whole book in another Bible, in a split at the same verse, and
 -- both kept on the same verse as either's cursor moves
 function M.parallel(name, mods)
   local win = vim.api.nvim_get_current_win()
   local current = bible_of(vim.api.nvim_win_get_buf(win))
   if not current then
-    return vim.notify('topos: :ToposParallel works in a whole book (go to definition on a reference)', vim.log.levels.WARN)
+    return vim.notify('logoxide: :LxParallel works in a whole book (go to definition on a reference)', vim.log.levels.WARN)
   end
   if not name or name == '' then
     return choose('Show next to ' .. current, current, function(chosen)
@@ -146,7 +146,7 @@ function M.parallel(name, mods)
   end
   same_verse(win, name, function(location)
     if not location then
-      return vim.notify('topos: ' .. name .. ' doesn\'t have this book', vim.log.levels.WARN)
+      return vim.notify('logoxide: ' .. name .. ' doesn\'t have this book', vim.log.levels.WARN)
     end
     vim.cmd((mods and mods ~= '' and mods or 'vertical') .. ' split ' .. vim.fn.fnameescape(location.uri))
     local other = vim.api.nvim_get_current_win()

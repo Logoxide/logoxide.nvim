@@ -1,7 +1,7 @@
--- Telescope pickers for topos: `:Telescope topos` (every reference), `:Telescope topos query
--- args=...`, and one per search kind, like `:Telescope topos explicit_overlap passage=John\ 3:16`
+-- Telescope pickers for topos: `:Telescope logoxide` (every reference), `:Telescope logoxide query
+-- args=...`, and one per search kind, like `:Telescope logoxide explicit_overlap passage=John\ 3:16`
 -- (the reference under the cursor if no passage is given)
-local search = require('topos.search')
+local search = require('logoxide.search')
 
 local exports = {
   search = function(opts)
@@ -17,6 +17,6 @@ for kind in pairs(search.kinds) do
     search.passage(kind, opts and opts.passage)
   end
 end
-exports.topos = exports.search
+exports.logoxide = exports.search
 
 return require('telescope').register_extension({ exports = exports })

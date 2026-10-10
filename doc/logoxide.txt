@@ -1,48 +1,48 @@
-*topos-bible.txt*  Find, search, and complete Bible references
+*logoxide.txt*  Find, search, and complete Bible references
 
 ==============================================================================
-CONTENTS                                                         *topos-bible*
+CONTENTS                                                         *logoxide*
 
-  1. Setup ........................................... |topos-bible-setup|
-  2. Commands ..................................... |topos-bible-commands|
-  3. Telescope ................................... |topos-bible-telescope|
-  4. Language server ................................... |topos-bible-lsp|
-  5. Bible text ....................................... |topos-bible-text|
+  1. Setup ........................................... |logoxide-setup|
+  2. Commands ..................................... |logoxide-commands|
+  3. Telescope ................................... |logoxide-telescope|
+  4. Language server ................................... |logoxide-lsp|
+  5. Bible text ....................................... |logoxide-text|
 
-topos-bible.nvim runs biblix-lsp (completion, hover, inlay hints, symbols,
+logoxide.nvim runs logoxide-lsp (completion, hover, inlay hints, symbols,
 diagnostics, go-to-references, and search code actions) and searches your
 workspace with the topos CLI. With a Bible (a folder of USX files), hover
 shows a reference's text and go-to-definition opens the whole book.
 
 ==============================================================================
-1. SETUP                                                   *topos-bible-setup*
+1. SETUP                                                   *logoxide-setup*
 
 With lazy.nvim: >lua
   {
-    'MasterTemple/topos-bible.nvim',
-    main = 'topos',
-    build = ':ToposBuild!',
+    'MasterTemple/logoxide.nvim',
+    main = 'logoxide',
+    build = ':LxBuild!',
     dependencies = { 'nvim-telescope/telescope.nvim' }, -- optional
     ft = { 'markdown', 'text' },
-    cmd = { 'ToposSearch', 'ToposQuery', 'ToposExplicitOverlap', 'ToposAnyOverlap',
-            'ToposExactOverlap', 'ToposInside', 'ToposExcludeOverlap', 'ToposBuild', 'ToposLspStart',
-            'ToposRead', 'ToposBibleAdd', 'ToposBibleSearch', 'ToposBibleRemove' },
+    cmd = { 'LxSearch', 'LxQuery', 'LxExplicitOverlap', 'LxAnyOverlap',
+            'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxBuild', 'LxLspStart',
+            'LxRead', 'LxBibleAdd', 'LxBibleSearch', 'LxBibleRemove' },
     opts = {
       bible = '~/Bibles/BSB',
       settings = { format = 'abbreviation', ['inlay-hints'] = 'never' },
     },
   }
 <
-Building needs Rust (https://rustup.rs): |:ToposBuild| runs `cargo install`
-into the plugin's build/ folder: biblix-lsp (the language server) from a biblix
+Building needs Rust (https://rustup.rs): |:LxBuild| runs `cargo install`
+into the plugin's build/ folder: logoxide-lsp (the language server) from a logoxide
 checkout and topos (the CLI) from a topos checkout (`source`), or from GitHub.
-biblix-lsp can't be installed from GitHub until biblix is published, so set
+logoxide-lsp can't be installed from GitHub until logoxide is published, so set
 `source` to checkouts for now. If the binaries are missing, `setup()` builds
 them (see `auto_build`). Binaries on your PATH work too.
 
-`require('topos').setup(opts)` takes (the defaults): >lua
+`require('logoxide').setup(opts)` takes (the defaults): >lua
   {
-    -- biblix-lsp's settings, overriding ~/.config/topos/config.toml (the
+    -- logoxide-lsp's settings, overriding ~/.config/topos/config.toml (the
     -- CLI's keys), like { format = 'abbreviation',
     --   ['psg-fmt'] = { join_adjacent = true }, ext = 'md,txt',
     --   ['inlay-hints'] = 'changed' | 'always' | 'osis' | 'never',
@@ -51,18 +51,18 @@ them (see `auto_build`). Binaries on your PATH work too.
     --             'testament', 'genres', 'verses', 'location', 'written',
     --             'bcv' } }
     settings = {},
-    -- A folder of USX files, one book each (see |topos-bible-text|)
+    -- A folder of USX files, one book each (see |logoxide-text|)
     bible = nil,
     -- More Bibles by name: { KJV = '~/Bibles/KJV' } or
     -- { KJV = { path = '~/Bibles/KJV', aliases = { 'AV' } } }
-    -- (see |topos-bible-translations|)
+    -- (see |logoxide-translations|)
     bibles = {},
     -- The Bible for references that name none: `bible`'s, else the first
-    -- of `bibles` by name (|:ToposBible| changes it)
+    -- of `bibles` by name (|:LxBible| changes it)
     default_bible = nil,
     -- Bibles whose text hover also shows, like { 'BSB', 'KJV' }
     hover_bibles = nil,
-    -- How Bible text is written and colored (see |topos-bible-markup|)
+    -- How Bible text is written and colored (see |logoxide-markup|)
     markup = {
       verse_numbers = { show = true, display = '[{verse}]' },
       chapter_numbers = { show = true, display = '{name} {chapter}' },
@@ -74,15 +74,15 @@ them (see `auto_build`). Binaries on your PATH work too.
       quotes = { show = true, display = '{text}' },
       width = nil,
     },
-    -- Code actions that insert a passage (see |topos-bible-insertions|)
+    -- Code actions that insert a passage (see |logoxide-insertions|)
     insertions = {},
     -- Search EPUBs in the workspace too; their
     -- references open in a read-only buffer of the book's text
-    -- (topos-file:///…/Gill.epub) at the reference. Off by default: a book
+    -- (logoxide-file:///…/Gill.epub) at the reference. Off by default: a book
     -- takes a moment to read the first time (then it's cached, with the
     -- topos CLI's cache)
     epub = false,
-    -- Search PDFs the same way, building biblix-lsp with PDF support
+    -- Search PDFs the same way, building logoxide-lsp with PDF support
     -- (MuPDF: a C compiler, and longer)
     pdf = false,
     lsp = {
@@ -96,11 +96,11 @@ them (see `auto_build`). Binaries on your PATH work too.
     },
     -- Binary paths; nil uses the plugin's build, then your PATH
     cmd = { lsp = nil, cli = nil },
-    -- What :ToposBuild builds from: a topos checkout (biblix beside it), or
-    -- { topos = '~/src/topos', biblix = '~/src/biblix' }; nil for GitHub
+    -- What :LxBuild builds from: a topos checkout (logoxide beside it), or
+    -- { topos = '~/src/topos', logoxide = '~/src/logoxide' }; nil for GitHub
     source = nil,
     auto_build = true,
-    -- Past the end (or start), where |:ToposNextBook| and the others go:
+    -- Past the end (or start), where |:LxNextBook| and the others go:
     -- books 'wrap' (Revelation → Genesis) or 'stop'; chapters and verses
     -- 'next' (into the next book or chapter), 'wrap' (this book's or
     -- chapter's first), or 'stop'
@@ -113,157 +113,157 @@ The CLI also reads ~/.config/topos/config.toml, so named queries (`-q`),
 custom data, and the cache work in the commands too.
 
 ==============================================================================
-2. COMMANDS                                             *topos-bible-commands*
+2. COMMANDS                                             *logoxide-commands*
 
 Results open in Telescope, or the quickfix list without it. Searches cover
 the language server's workspace folder (or a root marker, or the cwd).
 
-                                                                *:ToposSearch*
-:ToposSearch [paths]    Every reference in the workspace (or the paths).
+                                                                *:LxSearch*
+:LxSearch [paths]    Every reference in the workspace (or the paths).
 
-                                                                 *:ToposQuery*
-:ToposQuery {options}   A search with the CLI's options, completed with <Tab>:
-                        `:ToposQuery -g Wisdom`, `:ToposQuery --nt -b John`,
-                        `:ToposQuery -q pauline` (a named query).
+                                                                 *:LxQuery*
+:LxQuery {options}   A search with the CLI's options, completed with <Tab>:
+                        `:LxQuery -g Wisdom`, `:LxQuery --nt -b John`,
+                        `:LxQuery -q pauline` (a named query).
 
-:ToposExplicitOverlap [passage]                        *:ToposExplicitOverlap*
+:LxExplicitOverlap [passage]                        *:LxExplicitOverlap*
                         References that name a verse of the passage; whole
                         chapters don't count (`-o`).
-:ToposAnyOverlap [passage]                                  *:ToposAnyOverlap*
+:LxAnyOverlap [passage]                                  *:LxAnyOverlap*
                         References that share any verse with it.
-:ToposExactOverlap [passage]                              *:ToposExactOverlap*
+:LxExactOverlap [passage]                              *:LxExactOverlap*
                         References that are exactly it, however written.
-:ToposInside [passage]                                          *:ToposInside*
+:LxInside [passage]                                          *:LxInside*
                         References entirely inside it.
-:ToposExcludeOverlap [passage]                          *:ToposExcludeOverlap*
+:LxExcludeOverlap [passage]                          *:LxExcludeOverlap*
                         References that share no verse with it.
 
 Without a passage, these use the reference under the cursor. Passages are
 completed with <Tab> (`John 3:` lists every verse).
 
-                                                              *:ToposLspStart*
-:ToposLspStart          Starts biblix-lsp for the current buffer, whatever its
+                                                              *:LxLspStart*
+:LxLspStart          Starts logoxide-lsp for the current buffer, whatever its
                         file type (an unnamed buffer too), or restarts it if
                         it is running (re-attaching its buffers). Neovim can't
                         route diagnostics to an unnamed buffer, so the plugin
                         asks for them itself as you edit.
 
-                                                                 *:ToposBible*
-:ToposBible [name]      References that name no Bible use this one (a name
+                                                                 *:LxBible*
+:LxBible [name]      References that name no Bible use this one (a name
                         or alias from `bible` and `bibles`; without one,
                         choose with |vim.ui.select()|). It lasts until
                         Neovim quits; `default_bible` sets it for good.
 
-                                                                  *:ToposRead*
-:ToposRead [book] [name]
-                        Opens a whole book (`topos-bible://BSB/JHN`): `John`,
+                                                                  *:LxRead*
+:LxRead [book] [name]
+                        Opens a whole book (`logoxide://BSB/JHN`): `John`,
                         `1 cor`, or `JHN`, in the Bible named after
-                        it (`:ToposRead John KJV`), else the current whole
+                        it (`:LxRead John KJV`), else the current whole
                         book's Bible, else the default. Without a book,
                         chooses one: in Telescope, previewing each book as
                         it reads (colored as in a whole book), else with
                         |vim.ui.select()|. Takes a modifier to open it in a
-                        split (`:vertical ToposRead Romans`). Books and Bible
-                        names are completed with <Tab>. Starts biblix-lsp if it
-                        isn't running (as `:edit topos-bible://...` does).
+                        split (`:vertical LxRead Romans`). Books and Bible
+                        names are completed with <Tab>. Starts logoxide-lsp if it
+                        isn't running (as `:edit logoxide://...` does).
 
-                                    *:ToposNextBook* *:ToposPrevBook*
-                              *:ToposNextChapter* *:ToposPrevChapter*
-                                  *:ToposNextVerse* *:ToposPrevVerse*
-:[count]ToposNextBook   In a whole book, go to the next book of its Bible
-:[count]ToposPrevBook   (or the previous one), the next chapter (its label),
-:[count]ToposNextChapter
-:[count]ToposPrevChapter
-:[count]ToposNextVerse  or the next verse (with a count, that many). Past the
-:[count]ToposPrevVerse  end (or start), `navigation` says where: by default
+                                    *:LxNextBook* *:LxPrevBook*
+                              *:LxNextChapter* *:LxPrevChapter*
+                                  *:LxNextVerse* *:LxPrevVerse*
+:[count]LxNextBook   In a whole book, go to the next book of its Bible
+:[count]LxPrevBook   (or the previous one), the next chapter (its label),
+:[count]LxNextChapter
+:[count]LxPrevChapter
+:[count]LxNextVerse  or the next verse (with a count, that many). Past the
+:[count]LxPrevVerse  end (or start), `navigation` says where: by default
                         books wrap (Revelation → Genesis), chapters go on to
                         the next book, and verses to the next chapter (and
                         on to the next book). Each move is in the
                         |jumplist|. For mappings: >lua
-  vim.keymap.set('n', ']v', '<Cmd>ToposNextVerse<CR>')
+  vim.keymap.set('n', ']v', '<Cmd>LxNextVerse<CR>')
 <
-                                                              *:ToposParallel*
-:ToposParallel [name]   In a whole book (`topos-bible://BSB/JHN`), opens the
+                                                              *:LxParallel*
+:LxParallel [name]   In a whole book (`logoxide://BSB/JHN`), opens the
                         same book in another Bible in a split, at the verse
                         under the cursor, and keeps the two on the same verse
                         as either cursor moves. Takes a modifier for the
-                        split (`:horizontal ToposParallel KJV`; vertical by
+                        split (`:horizontal LxParallel KJV`; vertical by
                         default).
 
-                                                            *:ToposBibleSearch*
-:ToposBibleSearch {words}
+                                                            *:LxBibleSearch*
+:LxBibleSearch {words}
                         Searches the catalogs (eBible.org's and fetch.bible's
-                        translations, or those `biblix.toml` names) by name,
+                        translations, or those `logoxide.toml` names) by name,
                         abbreviation, or language, and installs the Bible
-                        chosen with |vim.ui.select()|. Runs `bx` in the
-                        current folder: its `biblix.toml`, else the
-                        library's own. biblix-lsp restarts to read it.
+                        chosen with |vim.ui.select()|. Runs `lx` in the
+                        current folder: its `logoxide.toml`, else the
+                        library's own. logoxide-lsp restarts to read it.
 
-                                                               *:ToposBibleAdd*
-:ToposBibleAdd {source} Installs a Bible: a biblix package's git URL (its
+                                                               *:LxBibleAdd*
+:LxBibleAdd {source} Installs a Bible: a logoxide package's git URL (its
                         newest release), or `ebible:<id>` / `fetch:<id>`
                         (imported from eBible.org or fetch.bible).
 
-                                                            *:ToposBibleRemove*
-:ToposBibleRemove {id}  Removes a package from `biblix.toml` (`bx clean
+                                                            *:LxBibleRemove*
+:LxBibleRemove {id}  Removes a package from `logoxide.toml` (`lx clean
                         --remove` deletes versions nothing uses).
 
-                                                                 *:ToposBuild*
-:ToposBuild[!]          Builds biblix-lsp, bx, and topos if they are missing (!
+                                                                 *:LxBuild*
+:LxBuild[!]          Builds logoxide-lsp, lx, and topos if they are missing (!
                         rebuilds), then starts the language server. It
                         runs `cargo install` into the plugin's build/
                         folder, from GitHub or `source`.
 
-`:checkhealth topos` shows which binaries are used and whether they run.
+`:checkhealth logoxide` shows which binaries are used and whether they run.
 
-                                                            *topos-bible-lua*
-Each command is a function of `require('topos')` too, for mappings and
+                                                            *logoxide-lua*
+Each command is a function of `require('logoxide')` too, for mappings and
 scripts. They take what the command takes (a string, or a list of words for
 the searches); the moving ones take a count (1 by default): >lua
-  local topos = require('topos')
-  topos.search(paths)                   -- :ToposSearch
-  topos.query('-g Wisdom')              -- :ToposQuery
-  topos.explicit_overlap(passage)       -- :ToposExplicitOverlap, and
+  local logoxide = require('logoxide')
+  logoxide.search(paths)                   -- :LxSearch
+  logoxide.query('-g Wisdom')              -- :LxQuery
+  logoxide.explicit_overlap(passage)       -- :LxExplicitOverlap, and
   -- any_overlap, exact_overlap, inside, exclude_overlap
-  topos.read(book, mods)                -- :ToposRead ('John KJV', 'vertical')
-  topos.next_book(count)                -- :ToposNextBook, and prev_book,
+  logoxide.read(book, mods)                -- :LxRead ('John KJV', 'vertical')
+  logoxide.next_book(count)                -- :LxNextBook, and prev_book,
   -- next_chapter, prev_chapter, next_verse, prev_verse
-  topos.bible(name)                     -- :ToposBible
-  topos.parallel(name, mods)            -- :ToposParallel
-  topos.bible_search(words)             -- :ToposBibleSearch
-  topos.bible_add(source)               -- :ToposBibleAdd
-  topos.bible_remove(id)                -- :ToposBibleRemove
-  topos.lsp_start()                     -- :ToposLspStart
-  topos.build(force)                    -- :ToposBuild[!]
+  logoxide.bible(name)                     -- :LxBible
+  logoxide.parallel(name, mods)            -- :LxParallel
+  logoxide.bible_search(words)             -- :LxBibleSearch
+  logoxide.bible_add(source)               -- :LxBibleAdd
+  logoxide.bible_remove(id)                -- :LxBibleRemove
+  logoxide.lsp_start()                     -- :LxLspStart
+  logoxide.build(force)                    -- :LxBuild[!]
 <
 The plugin maps no keys. For moving through a whole book, for example: >lua
-  local topos = require('topos')
+  local logoxide = require('logoxide')
   local function map(lhs, move)
     vim.keymap.set('n', lhs, function() move(vim.v.count1) end)
   end
-  map(']b', topos.next_book)
-  map('[b', topos.prev_book)
-  map(']c', topos.next_chapter)
-  map('[c', topos.prev_chapter)
-  map(']v', topos.next_verse)
-  map('[v', topos.prev_verse)
+  map(']b', logoxide.next_book)
+  map('[b', logoxide.prev_book)
+  map(']c', logoxide.next_chapter)
+  map('[c', logoxide.prev_chapter)
+  map(']v', logoxide.next_verse)
+  map('[v', logoxide.prev_verse)
 <
 
 ==============================================================================
-3. TELESCOPE                                           *topos-bible-telescope*
+3. TELESCOPE                                           *logoxide-telescope*
 
 `setup()` loads the extension when Telescope is installed: >vim
-  :Telescope topos                          " every reference
-  :Telescope topos query args=-g\ Wisdom
-  :Telescope topos explicit_overlap passage=John\ 3:16
-  :Telescope topos any_overlap              " the reference under the cursor
+  :Telescope logoxide                          " every reference
+  :Telescope logoxide query args=-g\ Wisdom
+  :Telescope logoxide explicit_overlap passage=John\ 3:16
+  :Telescope logoxide any_overlap              " the reference under the cursor
 <
 The pickers are `search`, `query`, `explicit_overlap`, `any_overlap`,
 `exact_overlap`, `inside`, and `exclude_overlap`. From Lua: >lua
-  require('telescope').extensions.topos.exact_overlap({ passage = 'Rom 8:28' })
+  require('telescope').extensions.logoxide.exact_overlap({ passage = 'Rom 8:28' })
 <
 ==============================================================================
-4. LANGUAGE SERVER                                           *topos-bible-lsp*
+4. LANGUAGE SERVER                                           *logoxide-lsp*
 
 Go to references (|grr|, or Telescope's `lsp_references`) lists every
 reference in the workspace that is exactly the one under the cursor. The code
@@ -279,7 +279,7 @@ references that don't exist get a warning. Inlay
 hints show the formatted reference where it's written differently.
 
 ==============================================================================
-5. BIBLE TEXT                                               *topos-bible-text*
+5. BIBLE TEXT                                               *logoxide-text*
 
 Set `bible` to a folder of USX files, one book each (`JHN.usx`,
 `44JHNBSB.usx`, or any name with a `<book code>` inside), as Paratext, the
@@ -291,12 +291,12 @@ the Bible. Its files are left out of workspace searches. Then:
 - Completing a chapter or verse shows its text as the item's documentation
   (with 'completeopt' "popup", or your completion plugin's documentation).
 - Go to definition (|CTRL-]|, or |vim.lsp.buf.definition()|) and go to
-  declaration (|vim.lsp.buf.declaration()|) open the whole book at the passage, in a buffer named like `topos-bible://BSB/JHN`. You
-  can also open one with |:ToposRead| or `:edit topos-bible://BSB/JHN`. The
-  buffer can't be changed (its 'filetype' is `topos-bible`, and it wraps long
-  paragraphs). |:ToposNextBook|, |:ToposNextChapter|, |:ToposNextVerse|, and
-  their `:ToposPrev*` move by book, chapter, and verse (map them as
-  |topos-bible-lua| shows). Its symbols
+  declaration (|vim.lsp.buf.declaration()|) open the whole book at the passage, in a buffer named like `logoxide://BSB/JHN`. You
+  can also open one with |:LxRead| or `:edit logoxide://BSB/JHN`. The
+  buffer can't be changed (its 'filetype' is `logoxide`, and it wraps long
+  paragraphs). |:LxNextBook|, |:LxNextChapter|, |:LxNextVerse|, and
+  their `:LxPrev*` move by book, chapter, and verse (map them as
+  |logoxide-lua| shows). Its symbols
   (|gO|, or Telescope's `lsp_document_symbols`) are its chapters and verses.
 - In that buffer, go to references (|grr|) on a verse lists every reference
   that names it in your workspace (explicit overlap: `John 3` doesn't count
@@ -305,7 +305,7 @@ the Bible. Its files are left out of workspace searches. Then:
   and in how many files (`???` if searching takes more than half a second;
   what was read is cached, so hovering again gets further).
 
-                                                    *topos-bible-translations*
+                                                    *logoxide-translations*
 Several Bibles: `bible` (named after its folder) and `bibles` (named by their
 keys, with `aliases`) are translations. A reference followed by one's name or
 alias, ignoring case (`John 3:16 KJV`, `John 3:16, KJV`, `John 3:16 (AV)`),
@@ -313,14 +313,14 @@ uses that Bible; other references use `default_bible`. Then:
 
 - Hover (on the reference or the name) shows that Bible's text, then the
   `hover_bibles`; with several Bibles, each text is labeled with its name.
-- Go to definition opens its book (`topos-bible://KJV/JHN`).
+- Go to definition opens its book (`logoxide://KJV/JHN`).
 - Completion offers the names after a reference (`John 3:16 K` gives `KJV`).
 - The reference is checked against that Bible's own verse counts (read from
   its USX), and a warning names it: `John 3:17 does not exist in the KJV`.
 - Insertions use it; a reference that names none offers one per Bible
   (`Insert Callout (KJV)`), and `{bible}` in `display` is the Bible's name.
 
-                                                          *topos-bible-markup*
+                                                          *logoxide-markup*
 `markup` says how Bible text is written and colored, in whole books, hover,
 completion documentation, and insertions. It has one table per element:
 
@@ -374,26 +374,26 @@ width. 'textwidth' doesn't do this: it only applies as you type or format
 Without `color` or `highlight`, each links to a group of your colorscheme:
 
   Element           Highlight group                        Default link
-  verse_numbers     @lsp.type.verseNumber.topos-bible      |hl-Number|
-  chapter_numbers   @lsp.type.chapterNumber.topos-bible    |hl-Title|
-  headings          @lsp.type.heading.topos-bible          |hl-Title|
-  notes             @lsp.type.note.topos-bible             |hl-Comment|
-  words_of_jesus    @lsp.type.wordsOfJesus.topos-bible     DiagnosticError
-  added             @lsp.type.added.topos-bible            @markup.italic
-  divine_name       @lsp.type.divineName.topos-bible       @markup.strong
-  quotes            @lsp.type.quote.topos-bible            @markup.quote
+  verse_numbers     @lsp.type.verseNumber.logoxide      |hl-Number|
+  chapter_numbers   @lsp.type.chapterNumber.logoxide    |hl-Title|
+  headings          @lsp.type.heading.logoxide          |hl-Title|
+  notes             @lsp.type.note.logoxide             |hl-Comment|
+  words_of_jesus    @lsp.type.wordsOfJesus.logoxide     DiagnosticError
+  added             @lsp.type.added.logoxide            @markup.italic
+  divine_name       @lsp.type.divineName.logoxide       @markup.strong
+  quotes            @lsp.type.quote.logoxide            @markup.quote
 
-In whole books the colors come from biblix-lsp's semantic tokens, so the text
+In whole books the colors come from logoxide-lsp's semantic tokens, so the text
 has no markup. In hover (and completion documentation), a passage is a
-```topos-bible code block: Neovim hides its first line, whose info string says
+```logoxide code block: Neovim hides its first line, whose info string says
 what to color, and the plugin colors the block the same way (its text is
-`ToposBibleText`, Normal's color, rather than a code color). Completion
-documentation is a plain ```topos-bible block, since completion plugins like
+`LogoxideBibleText`, Normal's color, rather than a code color). Completion
+documentation is a plain ```logoxide block, since completion plugins like
 blink.cmp show the first line instead of hiding it; the colors are in the
 item's `data.tokens`. To color it in blink.cmp, set its documentation `draw`: >lua
   completion = {
     documentation = {
-      draw = function(opts) require('topos').blink_draw(opts) end,
+      draw = function(opts) require('logoxide').blink_draw(opts) end,
     },
   }
 <
@@ -402,7 +402,7 @@ Other items are drawn as usual.
 `markup` can also go in ~/.config/topos/config.toml (as `[markup]`, without
 colors), where the server reads it like the other settings.
 
-                                                      *topos-bible-insertions*
+                                                      *logoxide-insertions*
 `insertions` are ways to insert a passage's text at a reference, each a code
 action (|gra|) named "Insert {name}". Each takes:
 

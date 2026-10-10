@@ -1,22 +1,22 @@
 --[[
-Reading a Bible directly: :ToposRead John opens the whole book (`topos-bible://BSB/JHN`), and
-:ToposRead alone chooses a book, in Telescope with the book rendered and colored as its preview.
-In a whole book, :ToposNextBook, :ToposNextChapter, :ToposNextVerse, and their :ToposPrev* go to
+Reading a Bible directly: :LxRead John opens the whole book (`logoxide://BSB/JHN`), and
+:LxRead alone chooses a book, in Telescope with the book rendered and colored as its preview.
+In a whole book, :LxNextBook, :LxNextChapter, :LxNextVerse, and their :LxPrev* go to
 the next or previous one (each past the end as `navigation` says).
 ]]
-local bin = require('topos.bin')
-local book = require('topos.book')
-local config = require('topos.config')
+local bin = require('logoxide.bin')
+local book = require('logoxide.book')
+local config = require('logoxide.config')
 
 local M = {}
 
 local function client()
-  return vim.lsp.get_clients({ name = 'topos' })[1]
+  return vim.lsp.get_clients({ name = 'logoxide' })[1]
 end
 
--- The Bible and book of a `topos-bible://BSB/JHN` buffer
+-- The Bible and book of a `logoxide://BSB/JHN` buffer
 local function book_of(bufnr)
-  local name, code = vim.api.nvim_buf_get_name(bufnr or 0):match('^topos%-bible://([^/]+)/([^/#?]+)')
+  local name, code = vim.api.nvim_buf_get_name(bufnr or 0):match('^logoxide://([^/]+)/([^/#?]+)')
   return name and vim.uri_decode(name), code
 end
 
@@ -43,17 +43,17 @@ local function name_codes(codes)
   end
 end
 
--- A Bible's name as biblix-lsp writes it in a URI (all but letters, digits, and -._~ escaped)
+-- A Bible's name as logoxide-lsp writes it in a URI (all but letters, digits, and -._~ escaped)
 local function encode(name)
   return (name:gsub('[^%w%-._~]', function(char)
     return ('%%%02X'):format(char:byte())
   end))
 end
 
--- A Bible from biblix-lsp (its name or an alias; nil for the default) with its books:
+-- A Bible from logoxide-lsp (its name or an alias; nil for the default) with its books:
 -- { name, books = { { code, name, uri } } }
 function M.bible(name)
-  local bibles = require('topos.bibles').list()
+  local bibles = require('logoxide.bibles').list()
   local found = bibles[1]
   if name then
     found = nil
@@ -109,7 +109,7 @@ end
 local function split_bible(text)
   local rest, last = text:match('^(.-)%s*(%S+)$')
   if last then
-    for _, bible in ipairs(require('topos.bibles').list()) do
+    for _, bible in ipairs(require('logoxide.bibles').list()) do
       if bible.name == last or vim.tbl_contains(bible.aliases or {}, last) then
         return rest, bible.name
       end
@@ -133,7 +133,7 @@ local function load_preview(uri, done)
   if not c then
     return
   end
-  c:request('topos/book', { uri = uri }, function(err, result)
+  c:request('logoxide/book', { uri = uri }, function(err, result)
     if err or not result then
       return
     end
@@ -160,7 +160,7 @@ local function load_preview(uri, done)
   end)
 end
 
-local preview_ns = vim.api.nvim_create_namespace('topos_book_preview')
+local preview_ns = vim.api.nvim_create_namespace('logoxide_book_preview')
 
 local function show_preview(bufnr, preview)
   if not vim.api.nvim_buf_is_valid(bufnr) then
@@ -237,32 +237,32 @@ local function pick(bible, current, mods)
 end
 
 --[[
-:ToposRead [book] [bible]: opens the whole book (`John`, `1 cor`, `JHN`), in the Bible named
+:LxRead [book] [bible]: opens the whole book (`John`, `1 cor`, `JHN`), in the Bible named
 after it, else the current book's Bible, else the default; without a book, chooses one
 ]]
 function M.read(args, mods)
-  if not require('topos').ensure_lsp() then
+  if not require('logoxide').ensure_lsp() then
     return
   end
   local current_bible, current_code = book_of(0)
   local text, named = split_bible(vim.trim(args or ''))
   local bible = M.bible(named or current_bible)
   if not bible or #bible.books == 0 then
-    return vim.notify('topos: no Bible has books to read (set `bible` or `bibles`)', vim.log.levels.WARN)
+    return vim.notify('logoxide: no Bible has books to read (set `bible` or `bibles`)', vim.log.levels.WARN)
   end
   if text == '' then
     return pick(bible, bible.name == current_bible and current_code or nil, mods)
   end
   local found = find(bible.books, text)
   if not found then
-    return vim.notify(('topos: %s has no book "%s"'):format(bible.name, text), vim.log.levels.WARN)
+    return vim.notify(('logoxide: %s has no book "%s"'):format(bible.name, text), vim.log.levels.WARN)
   end
   open(found, mods)
 end
 
 -- Not in a whole book: says so (for the moving commands)
 local function not_a_book()
-  vim.notify('topos: not in a whole book (open one with :ToposRead)', vim.log.levels.WARN)
+  vim.notify('logoxide: not in a whole book (open one with :LxRead)', vim.log.levels.WARN)
 end
 
 -- In a whole book, opens the book `step` books away in the same Bible, past the last book to
@@ -279,7 +279,7 @@ function M.book(step, done)
       local target = i + step
       if target < 1 or target > count then
         if config.options.navigation.books ~= 'wrap' then
-          return vim.notify(('topos: the %s book of %s'):format(step > 0 and 'last' or 'first', bible.name))
+          return vim.notify(('logoxide: the %s book of %s'):format(step > 0 and 'last' or 'first', bible.name))
         end
         target = (target - 1) % count + 1
       end
@@ -293,7 +293,7 @@ function M.book(step, done)
 end
 
 --[[
-The chapters of the whole book in the current buffer, from biblix-lsp's document symbols:
+The chapters of the whole book in the current buffer, from logoxide-lsp's document symbols:
 { { start = { row, col }, verses = { { row, col } } } }, each a 0-based row and a byte column
 (the symbols' are UTF-16)
 ]]
@@ -307,10 +307,10 @@ local function chapters()
     return { p.line, ok and col or 0 }
   end
   local symbols = response and response.result or {}
-  -- Before biblix-lsp had them, a book's symbols were the references in its text
+  -- Before logoxide-lsp had them, a book's symbols were the references in its text
   for _, symbol in ipairs(symbols) do
     if symbol.kind ~= vim.lsp.protocol.SymbolKind.Namespace then
-      vim.notify('topos: this biblix-lsp can\'t move by chapter or verse; update it (:ToposBuild!)', vim.log.levels.ERROR)
+      vim.notify('logoxide: this logoxide-lsp can\'t move by chapter or verse; update it (:LxBuild!)', vim.log.levels.ERROR)
       return {}
     end
   end
@@ -363,7 +363,7 @@ local function to_chapter(list, current, step, land)
       end
     end)
   end
-  vim.notify(('topos: the %s chapter of the book'):format(step > 0 and 'last' or 'first'))
+  vim.notify(('logoxide: the %s chapter of the book'):format(step > 0 and 'last' or 'first'))
 end
 
 -- In a whole book, the chapter `step` chapters away (its label, or its first verse)
@@ -413,7 +413,7 @@ function M.verse(step)
       jump(chapter.verses[direction > 0 and 1 or #chapter.verses] or chapter.start)
     end)
   end
-  vim.notify(('topos: the %s verse of the chapter'):format(step > 0 and 'last' or 'first'))
+  vim.notify(('logoxide: the %s verse of the chapter'):format(step > 0 and 'last' or 'first'))
 end
 
 -- Completes book names (the default Bible's), then Bible names after one; only the last word
@@ -421,14 +421,14 @@ end
 function M.complete(lead, cmdline, pos)
   local typed = cmdline:sub(1, pos):gsub('^%S+%s*', '')
   local start = #typed - #lead
-  local bible = require('topos').ensure_lsp() and M.bible()
+  local bible = require('logoxide').ensure_lsp() and M.bible()
   local candidates = {}
   for _, b in ipairs(bible and bible.books or {}) do
     local options = { b.name }
     if vim.startswith(typed:lower(), b.name:lower() .. ' ') then
       options = vim.tbl_map(function(other)
         return b.name .. ' ' .. other
-      end, require('topos.bibles').names())
+      end, require('logoxide.bibles').names())
     end
     for _, option in ipairs(options) do
       if vim.startswith(option:lower(), typed:lower()) then

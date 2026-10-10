@@ -1,6 +1,6 @@
 -- The :Topos* commands and their completions
-local bin = require('topos.bin')
-local search = require('topos.search')
+local bin = require('logoxide.bin')
+local search = require('logoxide.search')
 
 local M = {}
 
@@ -59,33 +59,33 @@ function M.complete_passage(_, cmdline, pos)
 end
 
 local function api()
-  return require('topos')
+  return require('logoxide')
 end
 
 local function bible_names()
-  return require('topos.bibles').names()
+  return require('logoxide.bibles').names()
 end
 
 local commands = {
-  ToposSearch = {
+  LxSearch = {
     function(opts)
       api().search(opts.args)
     end,
     { nargs = '*', complete = 'dir', desc = 'Every Bible reference in the workspace (or the paths given)' },
   },
-  ToposQuery = {
+  LxQuery = {
     function(opts)
       api().query(opts.args)
     end,
     { nargs = '+', complete = M.complete_flags, desc = 'Search with the CLI\'s options, like -g Wisdom' },
   },
-  ToposLspStart = {
+  LxLspStart = {
     function()
       api().lsp_start()
     end,
-    { desc = 'Start biblix-lsp for this buffer (whatever its file type), or restart it' },
+    { desc = 'Start logoxide-lsp for this buffer (whatever its file type), or restart it' },
   },
-  ToposBible = {
+  LxBible = {
     function(opts)
       api().bible(opts.args)
     end,
@@ -95,62 +95,62 @@ local commands = {
       desc = 'The Bible references use when they name none (choose one without a name)',
     },
   },
-  ToposParallel = {
+  LxParallel = {
     function(opts)
       api().parallel(opts.args, opts.mods)
     end,
     { nargs = '?', complete = bible_names, desc = 'This whole book in another Bible, side by side on the same verse' },
   },
-  ToposRead = {
+  LxRead = {
     function(opts)
       api().read(opts.args, opts.mods)
     end,
     {
       nargs = '*',
       complete = function(...)
-        return require('topos.read').complete(...)
+        return require('logoxide.read').complete(...)
       end,
       desc = 'Open a whole book of the Bible (choose one without a book)',
     },
   },
-  ToposBibleAdd = {
+  LxBibleAdd = {
     function(opts)
       api().bible_add(opts.args)
     end,
-    { nargs = 1, desc = 'Install a Bible: a biblix package\'s git URL, or ebible:<id> / fetch:<id>' },
+    { nargs = 1, desc = 'Install a Bible: a logoxide package\'s git URL, or ebible:<id> / fetch:<id>' },
   },
-  ToposBibleSearch = {
+  LxBibleSearch = {
     function(opts)
       api().bible_search(opts.args)
     end,
     { nargs = '*', desc = 'Search the catalogs (eBible.org, fetch.bible) for a Bible to install' },
   },
-  ToposBibleRemove = {
+  LxBibleRemove = {
     function(opts)
       api().bible_remove(opts.args)
     end,
     {
       nargs = 1,
       complete = function()
-        return require('topos.packages').ids()
+        return require('logoxide.packages').ids()
       end,
-      desc = 'Remove a Bible package from biblix.toml',
+      desc = 'Remove a Bible package from logoxide.toml',
     },
   },
-  ToposBuild = {
+  LxBuild = {
     function(opts)
       api().build(opts.bang)
     end,
-    { bang = true, desc = 'Build biblix-lsp and topos (! rebuilds)' },
+    { bang = true, desc = 'Build logoxide-lsp and topos (! rebuilds)' },
   },
 }
 
 local passages = {
-  ToposExplicitOverlap = 'explicit_overlap',
-  ToposAnyOverlap = 'any_overlap',
-  ToposExactOverlap = 'exact_overlap',
-  ToposInside = 'inside',
-  ToposExcludeOverlap = 'exclude_overlap',
+  LxExplicitOverlap = 'explicit_overlap',
+  LxAnyOverlap = 'any_overlap',
+  LxExactOverlap = 'exact_overlap',
+  LxInside = 'inside',
+  LxExcludeOverlap = 'exclude_overlap',
 }
 for name, kind in pairs(passages) do
   commands[name] = {
@@ -165,10 +165,10 @@ for name, kind in pairs(passages) do
   }
 end
 
--- :ToposNextBook, :ToposPrevVerse, ... in a whole book (with a count, that many)
+-- :LxNextBook, :LxPrevVerse, ... in a whole book (with a count, that many)
 for _, unit in ipairs({ 'book', 'chapter', 'verse' }) do
   for direction, word in pairs({ next = 'Next', prev = 'Prev' }) do
-    commands['Topos' .. word .. unit:gsub('^%l', string.upper)] = {
+    commands['Lx' .. word .. unit:gsub('^%l', string.upper)] = {
       function(opts)
         api()[direction .. '_' .. unit](math.max(opts.count, 1))
       end,

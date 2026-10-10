@@ -1,5 +1,5 @@
--- Finding the topos binaries: a configured path, the plugin's own build, then your PATH
-local config = require('topos.config')
+-- Finding the binaries: a configured path, the plugin's own build, then your PATH
+local config = require('logoxide.config')
 
 local M = {}
 
@@ -11,19 +11,19 @@ function M.root()
   return vim.fn.fnamemodify(source, ':p:h:h:h')
 end
 
--- Where :ToposBuild installs the binaries (`cargo install --root`)
+-- Where :LxBuild installs the binaries (`cargo install --root`)
 function M.build_root()
   return vim.fs.joinpath(M.root(), 'build')
 end
 
--- The plugin's build of `name`, like build/bin/biblix-lsp
+-- The plugin's build of `name`, like build/bin/logoxide-lsp
 function M.built(name)
   return vim.fs.joinpath(M.build_root(), 'bin', name .. exe)
 end
 
-local names = { lsp = 'biblix-lsp', cli = 'topos', bx = 'bx' }
+local names = { lsp = 'logoxide-lsp', cli = 'topos', lx = 'lx' }
 
--- The binary to run for 'lsp' (biblix-lsp), 'cli' (topos), or 'bx' (biblix's), or nil if there
+-- The binary to run for 'lsp' (logoxide-lsp), 'cli' (topos), or 'lx' (logoxide's), or nil if there
 -- is none
 function M.path(kind)
   local configured = config.options.cmd[kind]

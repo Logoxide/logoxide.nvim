@@ -1,8 +1,8 @@
--- The plugin's options and their defaults (see :help topos-bible-setup)
+-- The plugin's options and their defaults (see :help logoxide-setup)
 local M = {}
 
 M.defaults = {
-  -- biblix-lsp's settings, overriding ~/.config/topos/config.toml (the CLI's keys), like
+  -- logoxide-lsp's settings, overriding ~/.config/topos/config.toml (the CLI's keys), like
   -- { format = 'abbreviation', ['psg-fmt'] = { join_adjacent = true },
   --   ['inlay-hints'] = 'never', ['reference-diagnostics'] = 'hint', ext = 'md,txt',
   --   hover = { 'osis', 'book', 'genres', 'verses' } }
@@ -17,11 +17,11 @@ M.defaults = {
   -- in hover and go-to-definition, and its own verse counts
   bibles = {},
   -- The Bible for references that name none (a name or alias): `bible`'s by default, else the
-  -- first of `bibles` by name. :ToposBible changes it while Neovim runs
+  -- first of `bibles` by name. :LxBible changes it while Neovim runs
   default_bible = nil,
   -- Bibles whose text hover also shows, after the one a reference names, like { 'BSB', 'KJV' }
   hover_bibles = nil,
-  -- How Bible text is written and colored (see :help topos-bible-markup). Each element has:
+  -- How Bible text is written and colored (see :help logoxide-markup). Each element has:
   --   show       whether it is shown (hidden headings and notes are left out; the others are
   --              plain text, without their display or color)
   --   display    how it is written: for verse and chapter numbers a label with {verse},
@@ -47,11 +47,11 @@ M.defaults = {
     width = nil,
   },
   -- Search EPUBs in the workspace too: go-to-references and the search commands list their
-  -- references, which open in a read-only buffer of the book's text (`topos-file:///…/Gill.epub`)
+  -- references, which open in a read-only buffer of the book's text (`logoxide-file:///…/Gill.epub`)
   -- at the reference. Off by default: a book takes a moment to read the first time (then it's
   -- cached, with the topos CLI's cache)
   epub = false,
-  -- Search PDFs the same way, building biblix-lsp with PDF support (MuPDF: needs a C compiler and
+  -- Search PDFs the same way, building logoxide-lsp with PDF support (MuPDF: needs a C compiler and
   -- takes longer)
   pdf = false,
   -- Ways to insert a passage's text below a reference, each a code action ("Insert Callout"):
@@ -75,17 +75,17 @@ M.defaults = {
     settings = {},
   },
   -- Paths to the binaries; nil uses the plugin's own build, then your PATH
-  cmd = { lsp = nil, cli = nil, bx = nil },
-  -- What :ToposBuild builds from: a topos checkout ('~/src/topos', with biblix beside it), or
-  -- { topos = '~/src/topos', biblix = '~/src/biblix' }; nil for GitHub (biblix-lsp can't be
-  -- installed from GitHub until biblix is published, so set a biblix checkout for now)
+  cmd = { lsp = nil, cli = nil, lx = nil },
+  -- What :LxBuild builds from: a topos checkout ('~/src/topos', with logoxide beside it), or
+  -- { topos = '~/src/topos', logoxide = '~/src/logoxide' }; nil for GitHub (logoxide-lsp can't be
+  -- installed from GitHub until logoxide is published, so set a logoxide checkout for now)
   source = nil,
   -- Build the binaries when setup can't find them (takes a few minutes the first time)
   auto_build = true,
-  -- Where :ToposNextBook, :ToposNextChapter, :ToposNextVerse (and :ToposPrev*) go past the end
+  -- Where :LxNextBook, :LxNextChapter, :LxNextVerse (and :LxPrev*) go past the end
   -- (or start). They have no keys of their own; for example:
-  --   vim.keymap.set('n', ']b', function() require('topos').next_book(vim.v.count1) end)
-  --   vim.keymap.set('n', '[b', function() require('topos').prev_book(vim.v.count1) end)
+  --   vim.keymap.set('n', ']b', function() require('logoxide').next_book(vim.v.count1) end)
+  --   vim.keymap.set('n', '[b', function() require('logoxide').prev_book(vim.v.count1) end)
   --   ]c / [c for chapters (next_chapter, prev_chapter), ]v / [v for verses (next_verse,
   --   prev_verse)
   navigation = {

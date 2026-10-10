@@ -1,24 +1,24 @@
-# topos-bible.nvim
+# logoxide.nvim
 
 Find, search, and complete Bible references in your notes, and read the passages they point to.
-It runs biblix's language server (`biblix-lsp`, which was [topos](https://github.com/MasterTemple/topos-bible)'s `topos-lsp`)
+It runs logoxide's language server (`logoxide-lsp`, which was [topos](https://github.com/MasterTemple/logoxide)'s `topos-lsp`)
 and searches with topos's CLI (`topos`).
 
 With [lazy.nvim](https://lazy.folke.io):
 
 ```lua
 {
-  'MasterTemple/topos-bible.nvim',
-  main = 'topos',
-  -- Builds biblix-lsp and topos with Cargo (needs Rust: https://rustup.rs)
-  build = ':ToposBuild!',
+  'MasterTemple/logoxide.nvim',
+  main = 'logoxide',
+  -- Builds logoxide-lsp and topos with Cargo (needs Rust: https://rustup.rs)
+  build = ':LxBuild!',
   dependencies = { 'nvim-telescope/telescope.nvim' }, -- optional
   ft = { 'markdown', 'text' },
-  cmd = { 'ToposSearch', 'ToposQuery', 'ToposExplicitOverlap', 'ToposAnyOverlap',
-          'ToposExactOverlap', 'ToposInside', 'ToposExcludeOverlap', 'ToposBuild', 'ToposLspStart',
-          'ToposBible', 'ToposParallel', 'ToposRead', 'ToposBibleAdd', 'ToposBibleSearch',
-          'ToposBibleRemove', 'ToposNextBook', 'ToposPrevBook', 'ToposNextChapter',
-          'ToposPrevChapter', 'ToposNextVerse', 'ToposPrevVerse' },
+  cmd = { 'LxSearch', 'LxQuery', 'LxExplicitOverlap', 'LxAnyOverlap',
+          'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxBuild', 'LxLspStart',
+          'LxBible', 'LxParallel', 'LxRead', 'LxBibleAdd', 'LxBibleSearch',
+          'LxBibleRemove', 'LxNextBook', 'LxPrevBook', 'LxNextChapter',
+          'LxPrevChapter', 'LxNextVerse', 'LxPrevVerse' },
   opts = {
     -- A folder of USX files, one book each (JHN.usx): hover shows the text, and go to
     -- definition opens the whole book
@@ -26,7 +26,7 @@ With [lazy.nvim](https://lazy.folke.io):
     -- More Bibles: a reference followed by one's name (John 3:16 KJV) uses it
     bibles = { KJV = { path = '~/Bibles/KJV', aliases = { 'AV' } } },
     hover_bibles = { 'KJV' }, -- hover shows the KJV too
-    -- How it is written and colored (see :help topos-bible-markup for every key)
+    -- How it is written and colored (see :help logoxide-markup for every key)
     markup = {
       verse_numbers = { show = true, color = 'blue', display = '[{verse}]' },
       words_of_jesus = { show = true, color = 'red' },
@@ -40,7 +40,7 @@ With [lazy.nvim](https://lazy.folke.io):
       -- replace = 'line' (the reference's line), 'inline' (just the reference), or nil (below)
       { name = 'Quote', replace = 'inline', display = '“{text}” ({reference})' },
     },
-    -- biblix-lsp's settings: the CLI's config.toml keys, which these override
+    -- logoxide-lsp's settings: the CLI's config.toml keys, which these override
     settings = {
       format = 'name',                        -- or 'abbreviation' for Jn 3:16
       ['psg-fmt'] = { join_adjacent = true }, -- 3:16-18, not 3:16,17,18
@@ -57,8 +57,8 @@ With [lazy.nvim](https://lazy.folke.io):
   lists the references that are exactly the one under the cursor, and the code actions (`gra`)
   reformat it or search for it by explicit overlap, any overlap, exact overlap, or inside it
 - **Books**: with `epub = true`, go-to-references and the search commands also list the
-  references in the workspace's EPUBs (and with `pdf = true`, its PDFs, building biblix-lsp with
-  MuPDF); each opens in a read-only buffer of the book's text (`topos-file:///…/Gill.epub`) at
+  references in the workspace's EPUBs (and with `pdf = true`, its PDFs, building logoxide-lsp with
+  MuPDF); each opens in a read-only buffer of the book's text (`logoxide-file:///…/Gill.epub`) at
   the reference, where hover works too. Off by default: a book takes a moment to read the first
   time, then its references come from topos's cache (shared with the CLI)
 - **Bible text**: with `bible`, hovering a reference shows its text (`K`), and so does a
@@ -66,39 +66,39 @@ With [lazy.nvim](https://lazy.folke.io):
   the whole book in a read-only buffer at the passage, with verse numbers, chapters, headings,
   words of Jesus, and so on written and colored the way `markup` says. Go to references on a
   verse there lists every reference to it in your notes, and hovering it counts them
-- **Reading**: `:ToposRead John` opens a whole book (`1 cor` and `JHN` work too, and
-  `:ToposRead John KJV` another Bible's), and `:ToposRead` alone chooses one in Telescope,
-  previewing each book colored as it reads. In a book, `:ToposNextBook`, `:ToposNextChapter`,
-  `:ToposNextVerse` (and `:ToposPrev*`) move through the Bible; `navigation` says what happens
+- **Reading**: `:LxRead John` opens a whole book (`1 cor` and `JHN` work too, and
+  `:LxRead John KJV` another Bible's), and `:LxRead` alone chooses one in Telescope,
+  previewing each book colored as it reads. In a book, `:LxNextBook`, `:LxNextChapter`,
+  `:LxNextVerse` (and `:LxPrev*`) move through the Bible; `navigation` says what happens
   past the end (by default books wrap, chapters go on to the next book, and verses to the next
   chapter). The plugin maps no keys; see below for some
 - **Several Bibles**: with `bibles`, a reference followed by a Bible's name (`John 3:16 KJV`)
   uses that Bible for hover, go to definition, completion, insertions, and its own verse counts;
-  `:ToposBible KJV` changes the default, and `:ToposParallel KJV` opens the same book in another
+  `:LxBible KJV` changes the default, and `:LxParallel KJV` opens the same book in another
   Bible next to the current one, kept on the same verse
-- **Installing Bibles** (biblix packages, with `bx`): `:ToposBibleSearch world english` searches
+- **Installing Bibles** (logoxide packages, with `lx`): `:LxBibleSearch world english` searches
   the catalogs (eBible.org's and fetch.bible's translations) and installs the one you choose,
-  `:ToposBibleAdd https://...` adds a package from its git repository (or `ebible:<id>`,
-  `fetch:<id>`), and `:ToposBibleRemove id` removes one. They use the current folder's
-  `biblix.toml` (else the library's own), like biblix-lsp, which restarts to read them
+  `:LxBibleAdd https://...` adds a package from its git repository (or `ebible:<id>`,
+  `fetch:<id>`), and `:LxBibleRemove id` removes one. They use the current folder's
+  `logoxide.toml` (else the library's own), like logoxide-lsp, which restarts to read them
 - **Insertions**: code actions that write a passage below its reference (like an Obsidian
   callout), in place of its line, or in place of the reference
-- **Commands**: `:ToposSearch` (every reference), `:ToposQuery -g Wisdom` (the CLI's options,
-  completed with Tab), and `:ToposExplicitOverlap John 3:16`, `:ToposAnyOverlap`,
-  `:ToposExactOverlap`, `:ToposInside`, `:ToposExcludeOverlap` (the reference under the cursor
+- **Commands**: `:LxSearch` (every reference), `:LxQuery -g Wisdom` (the CLI's options,
+  completed with Tab), and `:LxExplicitOverlap John 3:16`, `:LxAnyOverlap`,
+  `:LxExactOverlap`, `:LxInside`, `:LxExcludeOverlap` (the reference under the cursor
   by default)
-- **Telescope**: `:Telescope topos`, plus a picker per search; without Telescope, results open
+- **Telescope**: `:Telescope logoxide`, plus a picker per search; without Telescope, results open
   in the quickfix list
 
-Every command is a Lua function too (`require('topos').next_verse()`, `.read('John')`,
-`.search()`, ...; see `:help topos-bible-lua`), so you can map them; for example:
+Every command is a Lua function too (`require('logoxide').next_verse()`, `.read('John')`,
+`.search()`, ...; see `:help logoxide-lua`), so you can map them; for example:
 
 ```lua
-local topos = require('topos')
+local logoxide = require('logoxide')
 for lhs, move in pairs({
-  [']b'] = topos.next_book, ['[b'] = topos.prev_book,
-  [']c'] = topos.next_chapter, ['[c'] = topos.prev_chapter,
-  [']v'] = topos.next_verse, ['[v'] = topos.prev_verse,
+  [']b'] = logoxide.next_book, ['[b'] = logoxide.prev_book,
+  [']c'] = logoxide.next_chapter, ['[c'] = logoxide.prev_chapter,
+  [']v'] = logoxide.next_verse, ['[v'] = logoxide.prev_verse,
 }) do
   vim.keymap.set('n', lhs, function() move(vim.v.count1) end)
 end
@@ -109,27 +109,27 @@ documentation window too:
 
 ```lua
 completion = {
-  documentation = { draw = function(opts) require('topos').blink_draw(opts) end },
+  documentation = { draw = function(opts) require('logoxide').blink_draw(opts) end },
 }
 ```
 
-The plugin and the CLI share `~/.config/topos/config.toml`. See `:help topos-bible`, and
-`:checkhealth topos` if something doesn't work.
+The plugin and the CLI share `~/.config/topos/config.toml`. See `:help logoxide`, and
+`:checkhealth logoxide` if something doesn't work.
 
 ## Building
 
-`:ToposBuild` installs `biblix-lsp` and `bx` (from biblix) and `topos` (from topos) into the plugin's
+`:LxBuild` installs `logoxide-lsp` and `lx` (from logoxide) and `topos` (from topos) into the plugin's
 `build/` folder with `cargo install`, from checkouts if you set `source = '~/path/to/topos'` (with
-biblix beside it) or `source = { topos = ..., biblix = ... }`, else from GitHub. biblix-lsp
-can't be installed from GitHub until biblix is published, so use checkouts for now. Binaries on your `PATH` work too, and `cmd = { lsp = ..., cli = ..., bx = ... }`
+logoxide beside it) or `source = { topos = ..., logoxide = ... }`, else from GitHub. logoxide-lsp
+can't be installed from GitHub until logoxide is published, so use checkouts for now. Binaries on your `PATH` work too, and `cmd = { lsp = ..., cli = ..., lx = ... }`
 picks them yourself.
 
 ## Tests
 
 `tests/nvim/run.sh` tests the plugin in headless Neovim, with the quickfix list and with
 Telescope if it is installed. It builds `topos` from a topos checkout (`TOPOS`, by default
-`../../rust/topos`) and `biblix-lsp` from a biblix checkout (`BIBLIX`, by default
-`../../rust/biblix`).
+`../../rust/topos`) and `logoxide-lsp` from a logoxide checkout (`LOGOXIDE`, by default
+`../../rust/logoxide`).
 
 <details>
 <summary>Screenshots</summary>

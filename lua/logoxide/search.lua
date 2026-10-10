@@ -1,6 +1,6 @@
 -- Searching with the topos CLI (`topos -m json`), and showing results in Telescope or quickfix
-local bin = require('topos.bin')
-local config = require('topos.config')
+local bin = require('logoxide.bin')
+local config = require('logoxide.config')
 
 local M = {}
 
@@ -16,7 +16,7 @@ M.kinds = {
 -- The folder to search: the language server's for this buffer, a root marker, or the cwd
 function M.root(bufnr)
   bufnr = bufnr or 0
-  for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr, name = 'topos' })) do
+  for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr, name = 'logoxide' })) do
     if client.root_dir then
       return client.root_dir
     end
@@ -56,7 +56,7 @@ end
 local function cli()
   local path = bin.path('cli')
   if not path then
-    vim.notify('topos: the topos CLI is not built yet; run :ToposBuild', vim.log.levels.ERROR)
+    vim.notify('logoxide: the topos CLI is not built yet; run :LxBuild', vim.log.levels.ERROR)
   end
   return path
 end
@@ -91,7 +91,7 @@ function M.show(title, items)
   local picker = config.options.picker
   local has_telescope = picker ~= 'quickfix' and pcall(require, 'telescope')
   if picker == 'telescope' and not has_telescope then
-    vim.notify('topos: Telescope is not installed; using the quickfix list', vim.log.levels.WARN)
+    vim.notify('logoxide: Telescope is not installed; using the quickfix list', vim.log.levels.WARN)
   end
   if not has_telescope then
     vim.fn.setqflist({}, ' ', { title = title, items = items })
@@ -152,7 +152,7 @@ function M.run(args, title, opts)
       -- Exit code 1 only means nothing was found
       if result.code > 1 then
         local message = vim.trim(result.stderr or '')
-        return vim.notify('topos: ' .. (message ~= '' and message or 'the search failed'), vim.log.levels.ERROR)
+        return vim.notify('logoxide: ' .. (message ~= '' and message or 'the search failed'), vim.log.levels.ERROR)
       end
       local items = {}
       for line in (result.stdout or ''):gmatch('[^\n]+') do
@@ -189,7 +189,7 @@ function M.passage(kind, passage)
   local spec = M.kinds[kind]
   passage = (passage and vim.trim(passage) ~= '') and vim.trim(passage) or M.reference_at_cursor()
   if not passage then
-    return vim.notify('topos: give a passage, or put the cursor on a reference', vim.log.levels.WARN)
+    return vim.notify('logoxide: give a passage, or put the cursor on a reference', vim.log.levels.WARN)
   end
   M.run({ spec.flag, passage }, spec.title:format(passage))
 end

@@ -1,6 +1,6 @@
 -- Exercises the plugin in headless Neovim (run by tests/nvim/run.sh, which sets REPO, TOPOS,
--- BIBLIX, and WORK)
-local REPO, TOPOS, BIBLIX, WORK = vim.env.REPO, vim.env.TOPOS, vim.env.BIBLIX, vim.env.WORK
+-- LOGOXIDE, and WORK)
+local REPO, TOPOS, LOGOXIDE, WORK = vim.env.REPO, vim.env.TOPOS, vim.env.LOGOXIDE, vim.env.WORK
 local out = {}
 local function log(...) table.insert(out, table.concat(vim.tbl_map(tostring, {...}), " ")); vim.fn.writefile(out, WORK .. "/out.txt") end
 local ok, err = xpcall(function()
@@ -9,8 +9,8 @@ vim.opt.rtp:prepend(REPO)
 if vim.env.WITH_TELESCOPE then
   for _, p in ipairs({ "plenary.nvim", "telescope.nvim" }) do vim.opt.rtp:prepend((vim.env.PLUGINS or vim.fn.expand("~/.local/share/nvim/lazy")) .. "/" .. p) end
 end
-vim.cmd("runtime plugin/topos-bible.lua")
-require("topos").setup({ cmd = { lsp = BIBLIX .. "/target/debug/biblix-lsp", cli = TOPOS .. "/target/debug/topos" }, auto_build = false,
+vim.cmd("runtime plugin/logoxide.lua")
+require("logoxide").setup({ cmd = { lsp = LOGOXIDE .. "/target/debug/logoxide-lsp", cli = TOPOS .. "/target/debug/topos" }, auto_build = false,
   -- Server settings, as in a lazy.nvim spec's `opts`
   settings = { ["reference-diagnostics"] = "hint" },
   bible = WORK .. "/Bibles/BSB",
@@ -18,9 +18,9 @@ require("topos").setup({ cmd = { lsp = BIBLIX .. "/target/debug/biblix-lsp", cli
   markup = { words_of_jesus = { color = "#ff0000" }, verse_numbers = { highlight = "Special" } },
   insertions = { { name = "Callout", display = "> [!bible] {reference}\n{text}", line_prefix = "> " } } })
 vim.cmd("edit " .. WORK .. "/ws/open.txt")
-vim.wait(5000, function() return #vim.lsp.get_clients({ bufnr = 0, name = "topos" }) > 0 end)
+vim.wait(5000, function() return #vim.lsp.get_clients({ bufnr = 0, name = "logoxide" }) > 0 end)
 vim.wait(500)
-local client = vim.lsp.get_clients({ bufnr = 0, name = "topos" })[1]
+local client = vim.lsp.get_clients({ bufnr = 0, name = "logoxide" })[1]
 log("lsp", client and client.name, "hints", vim.lsp.inlay_hint.is_enabled({ bufnr = 0 }))
 vim.wait(3000, function() return #vim.diagnostic.get(0) > 0 end)
 for _, d in ipairs(vim.diagnostic.get(0)) do
@@ -45,15 +45,15 @@ local function results(cmd)
   vim.cmd("buffer " .. WORK .. "/ws/open.txt")
   return title, n
 end
-log("search", results("ToposSearch"))
-log("query", results("ToposQuery -g Gospels --exclude-book Luke"))
-log("explicit", results("ToposExplicitOverlap John 3:16"))
+log("search", results("LxSearch"))
+log("query", results("LxQuery -g Gospels --exclude-book Luke"))
+log("explicit", results("LxExplicitOverlap John 3:16"))
 vim.api.nvim_win_set_cursor(0, { 1, 6 })
-log("exact at cursor", results("ToposExactOverlap"))
-log("any", results("ToposAnyOverlap John 3"))
-log("inside", results("ToposInside John 3"))
-log("complete flags", table.concat(vim.fn.getcompletion("ToposQuery -g Pau", "cmdline"), "|"))
-log("complete ref", table.concat(vim.list_slice(vim.fn.getcompletion("ToposExplicitOverlap John 3:1", "cmdline"), 1, 3), "|"))
+log("exact at cursor", results("LxExactOverlap"))
+log("any", results("LxAnyOverlap John 3"))
+log("inside", results("LxInside John 3"))
+log("complete flags", table.concat(vim.fn.getcompletion("LxQuery -g Pau", "cmdline"), "|"))
+log("complete ref", table.concat(vim.list_slice(vim.fn.getcompletion("LxExplicitOverlap John 3:1", "cmdline"), 1, 3), "|"))
 local ca = vim.lsp.util.make_range_params(0, client.offset_encoding); ca.context = { diagnostics = {} }
 local actions = vim.lsp.buf_request_sync(0, "textDocument/codeAction", ca, 5000)
 local action, reformat
@@ -67,8 +67,8 @@ log("code action", action.title, results(function() client:exec_cmd(action.comma
 vim.lsp.util.apply_workspace_edit(reformat.edit, client.offset_encoding)
 log("reformat", reformat.title, vim.api.nvim_get_current_line())
 if telescope then
-  log("telescope ext", results(function() require("telescope").extensions.topos.explicit_overlap({ passage = "Rom 8:28" }) end))
-  log("telescope ext query", results(function() require("telescope").extensions.topos.query({ args = '-g "Pauline Epistles"' }) end))
+  log("telescope ext", results(function() require("telescope").extensions.logoxide.explicit_overlap({ passage = "Rom 8:28" }) end))
+  log("telescope ext query", results(function() require("telescope").extensions.logoxide.query({ args = '-g "Pauline Epistles"' }) end))
 end
 -- The Bible: the reference's text in hover
 vim.cmd("buffer " .. WORK .. "/ws/open.txt")
@@ -78,7 +78,7 @@ do
   local hover = vim.lsp.buf_request_sync(0, "textDocument/hover", params, 5000)
   local value = ""
   for _, r in pairs(hover or {}) do value = r.result and r.result.contents.value or value end
-  log("hover text", value:match("\n```topos%-bible[^\n]*\n([^\n]*)"))
+  log("hover text", value:match("\n```logoxide[^\n]*\n([^\n]*)"))
 end
 -- The hover float colors its passage
 vim.lsp.buf.hover()
@@ -100,7 +100,7 @@ end
 do
   local item = client:request_sync("completionItem/resolve", { label = "John 3:16", data = { passage = "John 3:16" } }, 5000, 0).result
   local buf = vim.api.nvim_create_buf(false, true)
-  require("topos").blink_draw({
+  require("logoxide").blink_draw({
     item = item,
     window = { get_buf = function() return buf end },
     default_implementation = function()
@@ -119,13 +119,13 @@ do
 end
 -- Go to definition opens the whole book, read-only, at the verse
 vim.lsp.buf.definition()
-vim.wait(5000, function() return vim.api.nvim_buf_get_name(0):find("^topos%-bible://") ~= nil end)
+vim.wait(5000, function() return vim.api.nvim_buf_get_name(0):find("^logoxide://") ~= nil end)
 local book = vim.api.nvim_get_current_buf()
 log("book", vim.api.nvim_buf_get_name(book), vim.bo.filetype, vim.bo.modifiable, vim.bo.buftype)
 log("book line", vim.api.nvim_get_current_line())
 local cursor = vim.api.nvim_win_get_cursor(0)
 log("book cursor", cursor[1], cursor[2])
-log("book title", vim.b.topos_book)
+log("book title", vim.b.logoxide_book)
 -- Colored by semantic tokens: words of Jesus in `markup`'s color
 vim.wait(5000, function() return #vim.inspect_pos(book, 3, 60).semantic_tokens > 0 end)
 for _, token in ipairs(vim.inspect_pos(book, 3, 60).semantic_tokens) do
@@ -176,13 +176,13 @@ do
   end
   log("callout", table.concat(vim.api.nvim_buf_get_lines(0, 1, 4, false), "|"))
 end
--- Several Bibles: a reference followed by a Bible's name uses it; :ToposBible sets the default
+-- Several Bibles: a reference followed by a Bible's name uses it; :LxBible sets the default
 do
-  log("bibles", table.concat(require("topos.bibles").names(), "|"))
+  log("bibles", table.concat(require("logoxide.bibles").names(), "|"))
   -- Written now, so the workspace searches above don't count it
   vim.fn.writefile({ "Read John 3:16 KJV", "and John 3:16", "John 3:17 AV" }, WORK .. "/ws/kjv.txt")
   vim.cmd("edit " .. WORK .. "/ws/kjv.txt")
-  vim.wait(5000, function() return #vim.lsp.get_clients({ bufnr = 0, name = "topos" }) > 0 end)
+  vim.wait(5000, function() return #vim.lsp.get_clients({ bufnr = 0, name = "logoxide" }) > 0 end)
   local function hover(line, col)
     vim.api.nvim_win_set_cursor(0, { line, col })
     local params = vim.lsp.util.make_position_params(0, client.offset_encoding)
@@ -199,21 +199,21 @@ do
   for _, d in ipairs(vim.diagnostic.get(0, { severity = vim.diagnostic.severity.WARN })) do
     log("missing in KJV", d.message)
   end
-  vim.cmd("ToposBible AV")
+  vim.cmd("LxBible AV")
   vim.wait(3000, function() return hover(2, 6):find("*KJV*", 1, true) ~= nil end)
   log("set default hover", hover(2, 6):match("\n(%*%u+%*)\n"))
-  vim.cmd("ToposBible BSB")
+  vim.cmd("LxBible BSB")
   vim.wait(3000, function() return hover(2, 6):find("*BSB*", 1, true) ~= nil end)
 end
--- :ToposParallel: the KJV's John next to the BSB's, on the same verse
+-- :LxParallel: the KJV's John next to the BSB's, on the same verse
 do
-  vim.cmd("edit topos-bible://BSB/JHN")
+  vim.cmd("edit logoxide://BSB/JHN")
   local bsb_win = vim.api.nvim_get_current_win()
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
   local row
   for i, l in ipairs(lines) do if l:find("^%[16%]") then row = i end end
   vim.api.nvim_win_set_cursor(0, { row, 0 })
-  vim.cmd("ToposParallel KJV")
+  vim.cmd("LxParallel KJV")
   vim.wait(5000, function() return vim.api.nvim_buf_get_name(0):find("KJV") ~= nil end)
   local kjv_win = vim.api.nvim_get_current_win()
   log("parallel", vim.api.nvim_buf_get_name(0), vim.api.nvim_get_current_line())
@@ -234,18 +234,18 @@ do
   -- The next run (with Telescope) uses the same workspace
   os.remove(WORK .. "/ws/kjv.txt")
 end
--- :ToposRead: a book by name, the next and previous book, another Bible, and the picker
+-- :LxRead: a book by name, the next and previous book, another Bible, and the picker
 do
-  vim.cmd("ToposRead jn")
+  vim.cmd("LxRead jn")
   log("read", vim.api.nvim_buf_get_name(0), vim.bo.filetype)
-  require("topos").next_book()
+  require("logoxide").next_book()
   local next_book = vim.api.nvim_buf_get_name(0)
-  require("topos").prev_book()
+  require("logoxide").prev_book()
   log("read next", next_book, vim.api.nvim_buf_get_name(0))
-  vim.cmd("ToposRead John AV")
+  vim.cmd("LxRead John AV")
   log("read bible", vim.api.nvim_buf_get_name(0))
-  log("read complete", table.concat(vim.fn.getcompletion("ToposRead Ro", "cmdline"), "|"),
-    table.concat(vim.fn.getcompletion("ToposRead Romans K", "cmdline"), "|"))
+  log("read complete", table.concat(vim.fn.getcompletion("LxRead Ro", "cmdline"), "|"),
+    table.concat(vim.fn.getcompletion("LxRead Romans K", "cmdline"), "|"))
   -- Moving by verse, chapter, and book: where the cursor lands (the book, and what follows it)
   local function where()
     local col = vim.api.nvim_win_get_cursor(0)[2]
@@ -256,22 +256,22 @@ do
     for _, cmd in ipairs({ ... }) do vim.cmd(cmd); table.insert(seen, where()) end
     return table.concat(seen, " ")
   end
-  vim.cmd("ToposRead John BSB")
+  vim.cmd("LxRead John BSB")
   vim.api.nvim_win_set_cursor(0, { 1, 0 })
   -- Past John's last verse, the next chapter: Romans 8 (the next book); back again
-  log("move verses", moves("ToposNextVerse", "ToposNextVerse", "lua require('topos').next_verse()", "ToposPrevVerse", "lua require('topos').prev_verse(1)"))
-  log("move chapters", moves("ToposNextChapter", "ToposNextChapter", "ToposPrevChapter"))
+  log("move verses", moves("LxNextVerse", "LxNextVerse", "lua require('logoxide').next_verse()", "LxPrevVerse", "lua require('logoxide').prev_verse(1)"))
+  log("move chapters", moves("LxNextChapter", "LxNextChapter", "LxPrevChapter"))
   -- Books wrap (Romans → John) unless `navigation` says not to; verses can wrap in their chapter
-  log("move books", moves("ToposNextBook", "ToposNextBook", "3ToposPrevBook"))
-  local navigation = require("topos.config").options.navigation
+  log("move books", moves("LxNextBook", "LxNextBook", "3LxPrevBook"))
+  local navigation = require("logoxide.config").options.navigation
   navigation.books, navigation.verses = "stop", "wrap"
-  vim.cmd("ToposRead John BSB")
+  vim.cmd("LxRead John BSB")
   vim.api.nvim_win_set_cursor(0, { 1, 0 })
-  log("move wrap", moves("ToposPrevBook", "ToposNextVerse", "ToposNextVerse", "ToposNextVerse"))
+  log("move wrap", moves("LxPrevBook", "LxNextVerse", "LxNextVerse", "LxNextVerse"))
   navigation.books, navigation.verses = "wrap", "next"
   if telescope then
     vim.o.columns, vim.o.lines = 200, 50 -- wide enough for Telescope's previewer
-    vim.cmd("ToposRead")
+    vim.cmd("LxRead")
     vim.wait(5000, function() return vim.bo.filetype == "TelescopePrompt" end)
     local picker = require("telescope.actions.state").get_current_picker(vim.api.nvim_get_current_buf())
     -- The selected book (the current one, the BSB's John) previewed with its colors
@@ -289,20 +289,20 @@ do
   end
 end
 vim.cmd("buffer " .. WORK .. "/ws/open.txt")
--- :ToposLspStart in an unnamed buffer with no file type, then again to restart
-local first = vim.lsp.get_clients({ name = "topos" })[1].id
+-- :LxLspStart in an unnamed buffer with no file type, then again to restart
+local first = vim.lsp.get_clients({ name = "logoxide" })[1].id
 vim.cmd("enew")
 vim.api.nvim_buf_set_lines(0, 0, -1, false, { "Read jn 3:16 today" })
 local scratch = vim.api.nvim_get_current_buf()
-log("unnamed before", #vim.lsp.get_clients({ bufnr = scratch, name = "topos" }))
-vim.cmd("ToposLspStart")
-vim.wait(5000, function() return #vim.lsp.get_clients({ bufnr = scratch, name = "topos" }) > 0 end)
+log("unnamed before", #vim.lsp.get_clients({ bufnr = scratch, name = "logoxide" }))
+vim.cmd("LxLspStart")
+vim.wait(5000, function() return #vim.lsp.get_clients({ bufnr = scratch, name = "logoxide" }) > 0 end)
 vim.wait(3000, function() return #vim.diagnostic.get(scratch) > 0 end)
 local diagnostics = vim.diagnostic.get(scratch)
-log("unnamed after", #vim.lsp.get_clients({ bufnr = scratch, name = "topos" }), diagnostics[1] and diagnostics[1].message)
+log("unnamed after", #vim.lsp.get_clients({ bufnr = scratch, name = "logoxide" }), diagnostics[1] and diagnostics[1].message)
 -- Reformatting from a code action works in the unnamed buffer too
 do
-  local c = vim.lsp.get_clients({ bufnr = scratch, name = "topos" })[1]
+  local c = vim.lsp.get_clients({ bufnr = scratch, name = "logoxide" })[1]
   local params = {
     textDocument = { uri = vim.uri_from_bufnr(scratch) },
     range = { start = { line = 0, character = 6 }, ["end"] = { line = 0, character = 6 } },
@@ -324,62 +324,62 @@ vim.wait(3000, function()
   return d and d.message == "Romans 8:28"
 end)
 log("unnamed edited", vim.diagnostic.get(scratch)[1] and vim.diagnostic.get(scratch)[1].message)
-vim.cmd("ToposLspStart")
+vim.cmd("LxLspStart")
 vim.wait(5000, function()
-  local c = vim.lsp.get_clients({ name = "topos" })[1]
+  local c = vim.lsp.get_clients({ name = "logoxide" })[1]
   return c and c.id ~= first and c.attached_buffers[scratch] ~= nil
 end)
-local restarted = vim.lsp.get_clients({ name = "topos" })
+local restarted = vim.lsp.get_clients({ name = "logoxide" })
 local open = vim.fn.bufnr(WORK .. "/ws/open.txt")
 log("restarted", #restarted, restarted[1].id ~= first, restarted[1].attached_buffers[scratch] ~= nil, restarted[1].attached_buffers[open] ~= nil)
 vim.cmd("buffer " .. open)
 -- `epub`: the EPUB's references, opened in its text at the reference
 do
-  local client = vim.lsp.get_clients({ name = "topos" })[1]
-  local command = { command = "topos.search", arguments = { { mode = "explicit-overlap", passage = "Rom 8:28" } } }
+  local client = vim.lsp.get_clients({ name = "logoxide" })[1]
+  local command = { command = "logoxide.search", arguments = { { mode = "explicit-overlap", passage = "Rom 8:28" } } }
   local function book_location()
     local response = client:request_sync("workspace/executeCommand", command, 20000, open)
     for _, location in ipairs(response and response.result or {}) do
-      if location.uri:find("^topos%-file://") then return location end
+      if location.uri:find("^logoxide%-file://") then return location end
     end
   end
   vim.uv.fs_copyfile(WORK .. "/Gill.epub", WORK .. "/ws/Gill.epub")
   log("book off", book_location() == nil)
-  local settings = require("topos.config").lsp_settings()
+  local settings = require("logoxide.config").lsp_settings()
   settings.epub = true
-  client:notify("workspace/didChangeConfiguration", { settings = { topos = settings } })
+  client:notify("workspace/didChangeConfiguration", { settings = { logoxide = settings } })
   vim.wait(500)
   local location = book_location()
   vim.lsp.util.show_document(location, client.offset_encoding, { focus = true })
-  vim.wait(5000, function() return vim.bo.filetype == "topos-file" end)
+  vim.wait(5000, function() return vim.bo.filetype == "logoxide-file" end)
   local row, col = unpack(vim.api.nvim_win_get_cursor(0))
   local line = vim.api.nvim_get_current_line()
-  log("book file", vim.bo.filetype, vim.bo.readonly, line:sub(col + 1, col + 8), vim.b.topos_book)
-  client:notify("workspace/didChangeConfiguration", { settings = { topos = require("topos.config").lsp_settings() } })
+  log("book file", vim.bo.filetype, vim.bo.readonly, line:sub(col + 1, col + 8), vim.b.logoxide_book)
+  client:notify("workspace/didChangeConfiguration", { settings = { logoxide = require("logoxide.config").lsp_settings() } })
   vim.cmd("buffer " .. open)
   os.remove(WORK .. "/ws/Gill.epub")
 end
-vim.cmd("checkhealth topos")
+vim.cmd("checkhealth logoxide")
 local health = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
 log("health ok", select(2, health:gsub("OK", "")), "errors", select(2, health:gsub("ERROR", "")))
 -- Each Bible's folder is checked
 do
   local health, oks = vim.health, 0
   vim.health = setmetatable({ ok = function(m) if m:find("^Bible ") then oks = oks + 1 end end }, { __index = function() return function() end end })
-  require("topos.health").check()
+  require("logoxide.health").check()
   vim.health = health
   log("health bibles", oks)
 end
--- :ToposRead starts biblix-lsp when it isn't running
+-- :LxRead starts logoxide-lsp when it isn't running
 do
-  for _, c in ipairs(vim.lsp.get_clients({ name = "topos" })) do c:stop(true) end
-  vim.wait(3000, function() return #vim.lsp.get_clients({ name = "topos" }) == 0 end)
+  for _, c in ipairs(vim.lsp.get_clients({ name = "logoxide" })) do c:stop(true) end
+  vim.wait(3000, function() return #vim.lsp.get_clients({ name = "logoxide" }) == 0 end)
   for _, b in ipairs(vim.api.nvim_list_bufs()) do
-    if vim.api.nvim_buf_get_name(b):find("^topos%-bible://") then vim.api.nvim_buf_delete(b, { force = true }) end
+    if vim.api.nvim_buf_get_name(b):find("^logoxide://") then vim.api.nvim_buf_delete(b, { force = true }) end
   end
   vim.cmd("enew")
-  vim.cmd("ToposRead Romans")
-  log("read starts lsp", #vim.lsp.get_clients({ name = "topos" }), vim.api.nvim_buf_get_name(0), vim.api.nvim_buf_line_count(0) > 1)
+  vim.cmd("LxRead Romans")
+  log("read starts lsp", #vim.lsp.get_clients({ name = "logoxide" }), vim.api.nvim_buf_get_name(0), vim.api.nvim_buf_line_count(0) > 1)
 end
 end, debug.traceback)
 if not ok then log("ERROR", err) end

@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Tests topos-bible.nvim in headless Neovim: once with the quickfix list, and once with Telescope
+# Tests logoxide.nvim in headless Neovim: once with the quickfix list, and once with Telescope
 # if it is installed (PLUGINS is the folder with plenary.nvim and telescope.nvim; lazy.nvim's by
 # default). The binaries are built from checkouts: topos from TOPOS (default ../../rust/topos) and
-# biblix-lsp from BIBLIX (default ../../rust/biblix), next to this repository in ~/Development
+# logoxide-lsp from LOGOXIDE (default ../../rust/logoxide), next to this repository in ~/Development
 # (next to this repository in ~/Development). Run from anywhere: tests/nvim/run.sh
 set -euo pipefail
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
 TOPOS=$(cd "${TOPOS:-$REPO/../../rust/topos}" && pwd)
-BIBLIX=$(cd "${BIBLIX:-$REPO/../../rust/biblix}" && pwd)
+LOGOXIDE=$(cd "${LOGOXIDE:-$REPO/../../rust/logoxide}" && pwd)
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 cargo build -q --manifest-path "$TOPOS/Cargo.toml" -p topos-bible-cli
-cargo build -q --manifest-path "$BIBLIX/Cargo.toml" -p biblix-lsp
+cargo build -q --manifest-path "$LOGOXIDE/Cargo.toml" -p logoxide-lsp
 
 mkdir -p "$WORK/ws/.git" "$WORK/ws/My Notes" "$WORK/config" "$WORK/cache"
 printf 'Jn 3:16 again\nand John 3:14-18\n' > "$WORK/ws/My Notes/a.md"
@@ -54,7 +54,7 @@ cat > "$WORK/Bibles/KJV/JHN.usx" <<'USX'
 <chapter eid="JHN 3"/></usx>
 USX
 
-expected='lsp topos hints true
+expected='lsp logoxide hints true
 diagnostic HINT reference John 3:16
 search Bible references 7
 query topos -g Gospels --exclude-book Luke 5
@@ -69,7 +69,7 @@ reformat Reformat as "John 3:16" See John 3:16 here'
 
 run() {
   rm -f "$WORK/out.txt"
-  (cd "$WORK/ws" && env REPO="$REPO" TOPOS="$TOPOS" BIBLIX="$BIBLIX" WORK="$WORK" "$@" timeout 120 nvim --clean --headless -c "luafile $REPO/tests/nvim/test.lua" >/dev/null 2>&1) || true
+  (cd "$WORK/ws" && env REPO="$REPO" TOPOS="$TOPOS" LOGOXIDE="$LOGOXIDE" WORK="$WORK" "$@" timeout 120 nvim --clean --headless -c "luafile $REPO/tests/nvim/test.lua" >/dev/null 2>&1) || true
   cat "$WORK/out.txt"
 }
 
@@ -84,27 +84,27 @@ check() {
   else
     echo "ok ($name)"
   fi
-  # :ToposLspStart starts the server in an unnamed buffer with no file type, then restarts it
+  # :LxLspStart starts the server in an unnamed buffer with no file type, then restarts it
   # The Bible: hover text, go-to-definition opens the book, colors, and references from a verse
   for line in 'hover text Jesus and Nicodemus' \
     'hover colors heading=Jesus and Nicodemus verseNumber=[16]' \
     'verse hover **John 3:16**  4 references in 3 files' 'declaration true' \
-    'blink colors ```topos-bible heading=Jesus and Nicodemus verseNumber=[16]' \
-    'callout > [!bible] John 3:16|> Jesus and Nicodemus|> [16] For God so loved the world.' 'book topos-bible://BSB/JHN topos-bible false nofile' \
+    'blink colors ```logoxide heading=Jesus and Nicodemus verseNumber=[16]' \
+    'callout > [!bible] John 3:16|> Jesus and Nicodemus|> [16] For God so loved the world.' 'book logoxide://BSB/JHN logoxide false nofile' \
     'book line [16] For God so loved the world. [17] Jesus said, I did not come to condemn.' \
-    'book cursor 4 0' 'book title John' 'woj @lsp.type.wordsOfJesus.topos-bible 16711680' \
-    'verse number @lsp.type.verseNumber.topos-bible Special' 'book references 4' 'tag true 4' \
+    'book cursor 4 0' 'book title John' 'woj @lsp.type.wordsOfJesus.logoxide 16711680' \
+    'verse number @lsp.type.verseNumber.logoxide Special' 'book references 4' 'tag true 4' \
     'bibles BSB|KJV' 'named hover **John 3:16** (KJV) that he gave' 'default hover *BSB*' \
     'missing in KJV John 3:17 does not exist in the KJV' 'set default hover *KJV*' \
-    'parallel topos-bible://KJV/JHN [16] For God so loved the world, that he gave his only begotten Son.' \
+    'parallel logoxide://KJV/JHN [16] For God so loved the world, that he gave his only begotten Son.' \
     'parallel follows John 3' 'health bibles 2' \
-    'read topos-bible://BSB/JHN topos-bible' 'read next topos-bible://BSB/ROM topos-bible://BSB/JHN' \
-    'read bible topos-bible://KJV/JHN' 'read complete Romans KJV' \
+    'read logoxide://BSB/JHN logoxide' 'read next logoxide://BSB/ROM logoxide://BSB/JHN' \
+    'read bible logoxide://KJV/JHN' 'read complete Romans KJV' \
     'move verses JHN:[16] JHN:[17] ROM:[28] JHN:[17] JHN:[16]' 'move chapters ROM:Roma JHN:John ROM:Roma' \
     'move books JHN:John ROM:Roma JHN:John' 'move wrap JHN:John JHN:[16] JHN:[17] JHN:[16]' \
-    'read starts lsp 1 topos-bible://BSB/ROM true' \
+    'read starts lsp 1 logoxide://BSB/ROM true' \
     'unnamed before 0' 'unnamed after 1 John 3:16' 'unnamed reformat Read John 3:16 today' 'unnamed edited Romans 8:28' 'restarted 1 true true true' \
-    'book off true' 'book file topos-file true Rom 8:28 Gill'; do
+    'book off true' 'book file logoxide-file true Rom 8:28 Gill'; do
     if ! grep -qxF "$line" <<<"$output"; then
       echo "FAIL ($name): expected '$line'"
       grep -E '^(unnamed|restarted|ERROR)' <<<"$output" || true
@@ -119,7 +119,7 @@ if [[ -d "$plugins/telescope.nvim" && -d "$plugins/plenary.nvim" ]]; then
   output=$(run WITH_TELESCOPE=1 PLUGINS="$plugins")
   check telescope "$output"
   grep -q 'telescope ext Search "Rom 8:28" for explicit overlap 1' <<<"$output" || { echo "FAIL (telescope extension)"; status=1; }
-  grep -qxF 'read picker Read BSB 2 John @lsp.type.heading.topos-bible' <<<"$output" || { echo "FAIL (telescope :ToposRead)"; grep '^read picker' <<<"$output"; status=1; }
+  grep -qxF 'read picker Read BSB 2 John @lsp.type.heading.logoxide' <<<"$output" || { echo "FAIL (telescope :LxRead)"; grep '^read picker' <<<"$output"; status=1; }
 else
   echo "skipped (telescope): not found in $plugins"
 fi
