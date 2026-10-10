@@ -88,6 +88,9 @@ them (see `auto_build`). Binaries on your PATH work too.
     -- Commentaries whose notes hover shows after a passage's text: true
     -- for all the project's, or ids like { 'mhcc' } (|logoxide-commentaries|)
     commentaries = nil,
+    -- A note also covers the verses after it up to the commentary's
+    -- next (|logoxide-commentaries|)
+    stretch_notes = false,
     -- Hovering a Strong's number (G25, H430) shows its dictionary entry
     -- (|logoxide-commentaries|)
     strongs = false,
@@ -332,7 +335,9 @@ package). With `commentaries` (true, or a list of ids), hovering a reference
 shows, after the Bible text, each note the commentaries have on its verses,
 labeled with the commentary's name and the verses the note covers:
 `MHCC (John 3:16-18)`. After eight notes from one commentary the rest are
-counted. With `strongs = true`, hovering a Strong's number (an uppercase `G`
+counted. A verse a commentary skips has no note unless `stretch_notes` is
+true: then a note also covers the verses after it up to the commentary's
+next note in the chapter. With `strongs = true`, hovering a Strong's number (an uppercase `G`
 or `H` and its digits: `G25`, `G0025`, `H430a`) shows its entry in each of
 the project's Strong's dictionaries that has it, under the number and its
 headword. Notes and entries are written with the `markup` settings, without

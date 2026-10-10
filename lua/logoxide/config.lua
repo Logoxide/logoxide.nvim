@@ -58,6 +58,9 @@ M.defaults = {
   -- commentary's name and the verses the note covers: true for every commentary the project
   -- uses (lx add them), or their ids, like { 'mhcc' }. Off by default
   commentaries = nil,
+  -- A commentary's note also covers the verses after it up to its next note in the chapter, so
+  -- hovering a verse the commentary skips shows the note before it. Off by default
+  stretch_notes = false,
   -- Hovering a Strong's number (G25, H430, G0025) shows its entry in the project's Strong's
   -- dictionaries (lexicons with keys = "strongs-greek" or "strongs-hebrew"). Off by default
   strongs = false,
@@ -129,7 +132,7 @@ local function expanded_bibles()
 end
 
 -- The language server's settings: `bible`, `bibles`, `default_bible`, `hover_bibles`, `markup`,
--- `insertions`, `epub`, `pdf`, `commentaries`, and `strongs`, then `lsp.settings`, then the top-level `settings`
+-- `insertions`, `epub`, `pdf`, `commentaries`, `stretch_notes`, and `strongs`, then `lsp.settings`, then the top-level `settings`
 function M.lsp_settings()
   local base = { markup = M.options.markup, insertions = M.options.insertions }
   if M.options.bible then
@@ -147,6 +150,9 @@ function M.lsp_settings()
     base.pdf = true
   end
   base.commentaries = M.options.commentaries
+  if M.options.stretch_notes then
+    base['stretch-notes'] = true
+  end
   if M.options.strongs then
     base.strongs = true
   end
