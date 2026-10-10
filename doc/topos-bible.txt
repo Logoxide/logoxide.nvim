@@ -76,6 +76,15 @@ them (see `auto_build`). Binaries on your PATH work too.
     },
     -- Code actions that insert a passage (see |topos-bible-insertions|)
     insertions = {},
+    -- Search EPUBs in the workspace too; their
+    -- references open in a read-only buffer of the book's text
+    -- (topos-file:///…/Gill.epub) at the reference. Off by default: a book
+    -- takes a moment to read the first time (then it's cached, with the
+    -- topos CLI's cache)
+    epub = false,
+    -- Search PDFs the same way, building biblix-lsp with PDF support
+    -- (MuPDF: a C compiler, and longer)
+    pdf = false,
     lsp = {
       enabled = true,
       filetypes = { 'markdown', 'text' },

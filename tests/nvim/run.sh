@@ -17,6 +17,17 @@ mkdir -p "$WORK/ws/.git" "$WORK/ws/My Notes" "$WORK/config" "$WORK/cache"
 printf 'Jn 3:16 again\nand John 3:14-18\n' > "$WORK/ws/My Notes/a.md"
 printf 'John 3, John 2; 3:16, Rom 8:28, Luke 2:1\n' > "$WORK/ws/b.txt"
 printf 'See jn 3:16 here\n' > "$WORK/ws/open.txt"
+# A book (the `epub` option): an EPUB of two paragraphs, copied into the workspace only while
+# its step runs (the CLI's searches read EPUBs too)
+python3 - "$WORK/Gill.epub" <<'PY'
+import sys, zipfile
+page = '<?xml version="1.0"?><html xmlns="http://www.w3.org/1999/xhtml"><head><title>c</title></head><body><p>Preface</p><p>On grace, see 📖 Rom 8:28 and more.</p></body></html>'
+with zipfile.ZipFile(sys.argv[1], "w") as z:
+    z.writestr("mimetype", "application/epub+zip")
+    z.writestr("META-INF/container.xml", '<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>')
+    z.writestr("content.opf", '<?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Gill</dc:title></metadata><manifest><item id="c" href="c.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="c"/></spine></package>')
+    z.writestr("c.xhtml", page)
+PY
 # A Bible: a folder of USX files
 mkdir -p "$WORK/Bibles/BSB"
 cat > "$WORK/Bibles/BSB/JHN.usx" <<'USX'
@@ -92,7 +103,8 @@ check() {
     'move verses JHN:[16] JHN:[17] ROM:[28] JHN:[17] JHN:[16]' 'move chapters ROM:Roma JHN:John ROM:Roma' \
     'move books JHN:John ROM:Roma JHN:John' 'move wrap JHN:John JHN:[16] JHN:[17] JHN:[16]' \
     'read starts lsp 1 topos-bible://BSB/ROM true' \
-    'unnamed before 0' 'unnamed after 1 John 3:16' 'unnamed reformat Read John 3:16 today' 'unnamed edited Romans 8:28' 'restarted 1 true true true'; do
+    'unnamed before 0' 'unnamed after 1 John 3:16' 'unnamed reformat Read John 3:16 today' 'unnamed edited Romans 8:28' 'restarted 1 true true true' \
+    'book off true' 'book file topos-file true Rom 8:28 Gill'; do
     if ! grep -qxF "$line" <<<"$output"; then
       echo "FAIL ($name): expected '$line'"
       grep -E '^(unnamed|restarted|ERROR)' <<<"$output" || true

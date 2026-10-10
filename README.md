@@ -56,6 +56,11 @@ With [lazy.nvim](https://lazy.folke.io):
   reference as formatted, and warnings for verses that don't exist); go to references (`grr`)
   lists the references that are exactly the one under the cursor, and the code actions (`gra`)
   reformat it or search for it by explicit overlap, any overlap, exact overlap, or inside it
+- **Books**: with `epub = true`, go-to-references and the search commands also list the
+  references in the workspace's EPUBs (and with `pdf = true`, its PDFs, building biblix-lsp with
+  MuPDF); each opens in a read-only buffer of the book's text (`topos-file:///…/Gill.epub`) at
+  the reference, where hover works too. Off by default: a book takes a moment to read the first
+  time, then its references come from topos's cache (shared with the CLI)
 - **Bible text**: with `bible`, hovering a reference shows its text (`K`), and so does a
   chapter or verse completion's documentation. Go to definition (`<C-]>`) or declaration opens
   the whole book in a read-only buffer at the passage, with verse numbers, chapters, headings,

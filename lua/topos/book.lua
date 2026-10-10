@@ -4,6 +4,9 @@ Go-to-definition on a reference opens one at the passage; `:edit topos-bible://B
 biblix-lsp renders the book (with `markup`'s labels) and colors it with semantic tokens, which
 `markup`'s colors set; references from a verse list every reference to it in the workspace.
 
+Books (EPUBs and PDFs, with the `epub` and `pdf` options) open the same way, as `topos-file:///…/Gill.epub`:
+the book's text, where the workspace searches put its references.
+
 Passages in hover (and completion documentation) are ```topos-bible code blocks whose info
 string, which Neovim hides, says what to color (line:column:length:type, in bytes); the plugin
 colors them the same way.
@@ -13,6 +16,8 @@ local config = require('topos.config')
 local M = {}
 
 M.scheme = 'topos-bible'
+-- An EPUB's or PDF's text, from the `epub` and `pdf` options' search results
+M.file_scheme = 'topos-file'
 
 -- `markup` key → semantic token type, and the highlight it links to without a `color`
 M.highlights = {
@@ -95,6 +100,33 @@ function M.read(bufnr, uri)
   vim.lsp.buf_attach_client(bufnr, client.id)
 end
 
+-- Fills a `topos-file://` buffer with the book's text, read-only, and attaches the language server
+-- (hover on its references)
+function M.read_file(bufnr, uri)
+  local client = client_for(bufnr)
+  if not client then
+    return
+  end
+  local response, err = client:request_sync('topos/fileText', { uri = uri }, 60000, bufnr)
+  if not response or response.err then
+    local message = err or (response and response.err.message) or 'no response'
+    return vim.notify('topos: ' .. message, vim.log.levels.ERROR)
+  end
+  local book = response.result
+  local bo = vim.bo[bufnr]
+  bo.modifiable = true
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, vim.split(book.text, '\n'))
+  bo.buftype = 'nofile'
+  bo.bufhidden = 'hide'
+  bo.swapfile = false
+  bo.modified = false
+  bo.modifiable = false
+  bo.readonly = true
+  vim.b[bufnr].topos_book = book.title
+  bo.filetype = M.file_scheme
+  vim.lsp.buf_attach_client(bufnr, client.id)
+end
+
 local fence_ns = vim.api.nvim_create_namespace('topos_bible_fences')
 
 -- Colors the ```topos-bible code blocks in a Markdown buffer (a hover or documentation float);
@@ -154,6 +186,13 @@ function M.setup()
     pattern = M.scheme .. '://*',
     callback = function(args)
       M.read(args.buf, args.match)
+    end,
+  })
+  vim.api.nvim_create_autocmd('BufReadCmd', {
+    group = group,
+    pattern = M.file_scheme .. '://*',
+    callback = function(args)
+      M.read_file(args.buf, args.match)
     end,
   })
   vim.api.nvim_create_autocmd('ColorScheme', { group = group, callback = M.apply_highlights })

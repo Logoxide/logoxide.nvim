@@ -333,6 +333,32 @@ local restarted = vim.lsp.get_clients({ name = "topos" })
 local open = vim.fn.bufnr(WORK .. "/ws/open.txt")
 log("restarted", #restarted, restarted[1].id ~= first, restarted[1].attached_buffers[scratch] ~= nil, restarted[1].attached_buffers[open] ~= nil)
 vim.cmd("buffer " .. open)
+-- `epub`: the EPUB's references, opened in its text at the reference
+do
+  local client = vim.lsp.get_clients({ name = "topos" })[1]
+  local command = { command = "topos.search", arguments = { { mode = "explicit-overlap", passage = "Rom 8:28" } } }
+  local function book_location()
+    local response = client:request_sync("workspace/executeCommand", command, 20000, open)
+    for _, location in ipairs(response and response.result or {}) do
+      if location.uri:find("^topos%-file://") then return location end
+    end
+  end
+  vim.uv.fs_copyfile(WORK .. "/Gill.epub", WORK .. "/ws/Gill.epub")
+  log("book off", book_location() == nil)
+  local settings = require("topos.config").lsp_settings()
+  settings.epub = true
+  client:notify("workspace/didChangeConfiguration", { settings = { topos = settings } })
+  vim.wait(500)
+  local location = book_location()
+  vim.lsp.util.show_document(location, client.offset_encoding, { focus = true })
+  vim.wait(5000, function() return vim.bo.filetype == "topos-file" end)
+  local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+  local line = vim.api.nvim_get_current_line()
+  log("book file", vim.bo.filetype, vim.bo.readonly, line:sub(col + 1, col + 8), vim.b.topos_book)
+  client:notify("workspace/didChangeConfiguration", { settings = { topos = require("topos.config").lsp_settings() } })
+  vim.cmd("buffer " .. open)
+  os.remove(WORK .. "/ws/Gill.epub")
+end
 vim.cmd("checkhealth topos")
 local health = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
 log("health ok", select(2, health:gsub("OK", "")), "errors", select(2, health:gsub("ERROR", "")))

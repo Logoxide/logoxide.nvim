@@ -46,6 +46,14 @@ M.defaults = {
     -- insertions (nil: no limit; whole books still wrap at the window's width)
     width = nil,
   },
+  -- Search EPUBs in the workspace too: go-to-references and the search commands list their
+  -- references, which open in a read-only buffer of the book's text (`topos-file:///…/Gill.epub`)
+  -- at the reference. Off by default: a book takes a moment to read the first time (then it's
+  -- cached, with the topos CLI's cache)
+  epub = false,
+  -- Search PDFs the same way, building biblix-lsp with PDF support (MuPDF: needs a C compiler and
+  -- takes longer)
+  pdf = false,
   -- Ways to insert a passage's text below a reference, each a code action ("Insert Callout"):
   --   name         the action is "Insert {name}"
   --   display      what is inserted: {text} (the passage), {reference} (John 3:16), {osis}
@@ -114,7 +122,7 @@ local function expanded_bibles()
 end
 
 -- The language server's settings: `bible`, `bibles`, `default_bible`, `hover_bibles`, `markup`,
--- and `insertions`, then `lsp.settings`, then the top-level `settings`
+-- `insertions`, `epub`, and `pdf`, then `lsp.settings`, then the top-level `settings`
 function M.lsp_settings()
   local base = { markup = M.options.markup, insertions = M.options.insertions }
   if M.options.bible then
@@ -125,6 +133,12 @@ function M.lsp_settings()
   end
   base['default-bible'] = M.options.default_bible
   base['hover-bibles'] = M.options.hover_bibles
+  if M.options.epub then
+    base.epub = true
+  end
+  if M.options.pdf then
+    base.pdf = true
+  end
   return vim.tbl_deep_extend('force', base, M.options.lsp.settings or {}, M.options.settings or {})
 end
 

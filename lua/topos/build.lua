@@ -41,8 +41,13 @@ function M.commands()
   local function from_git(repository, package)
     return { 'cargo', 'install', '--git', repository, '--root', root, package }
   end
+  local lsp = biblix and install(biblix, 'biblix-lsp') or from_git(M.repositories.biblix, 'biblix-lsp')
+  -- PDFs for the `pdf` option
+  if require('topos.config').options.pdf then
+    vim.list_extend(lsp, { '--features', 'pdf' })
+  end
   return {
-    biblix and install(biblix, 'biblix-lsp') or from_git(M.repositories.biblix, 'biblix-lsp'),
+    lsp,
     biblix and install(biblix, 'bx') or from_git(M.repositories.biblix, 'bx'),
     topos and install(topos, 'topos-cli') or from_git(M.repositories.topos, 'topos-bible-cli'),
   }
