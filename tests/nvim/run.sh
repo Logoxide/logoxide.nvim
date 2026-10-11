@@ -104,7 +104,8 @@ check() {
     'move books JHN:John ROM:Roma JHN:John' 'move wrap JHN:John JHN:[16] JHN:[17] JHN:[16]' \
     'read starts lsp 1 logoxide://BSB/ROM true' \
     'unnamed before 0' 'unnamed after 1 John 3:16' 'unnamed reformat Read John 3:16 today' 'unnamed edited Romans 8:28' 'restarted 1 true true true' \
-    'book off true' 'book file logoxide-file true Rom 8:28 Gill'; do
+    'book off true' 'book file logoxide-file true Rom 8:28 Gill' \
+    'complete typed Matthew 1 Matthew 10'; do
     if ! grep -qxF "$line" <<<"$output"; then
       echo "FAIL ($name): expected '$line'"
       grep -E '^(unnamed|restarted|ERROR)' <<<"$output" || true

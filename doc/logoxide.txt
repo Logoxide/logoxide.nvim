@@ -76,6 +76,10 @@ them (see `auto_build`). Binaries on your PATH work too.
     },
     -- Code actions that insert a passage (see |logoxide-insertions|)
     insertions = {},
+    -- Completion offers the chapter or verse already typed, first
+    -- (`Matthew 1` offers Matthew 1, then Matthew 10, ...), so its text
+    -- shows in the documentation
+    complete_typed = true,
     -- Search EPUBs in the workspace too; their
     -- references open in a read-only buffer of the book's text
     -- (logoxide-file:///…/Gill.epub) at the reference. Off by default: a book
@@ -299,6 +303,9 @@ the Bible. Its files are left out of workspace searches. Then:
   before it.
 - Completing a chapter or verse shows its text as the item's documentation
   (with 'completeopt' "popup", or your completion plugin's documentation).
+  The chapter or verse already typed is offered first (`Matthew 1` before
+  `Matthew 10`), so its text shows too; `complete_typed = false` leaves it
+  out.
 - Go to definition (|CTRL-]|, or |vim.lsp.buf.definition()|) and go to
   declaration (|vim.lsp.buf.declaration()|) open the whole book at the passage, in a buffer named like `logoxide://BSB/JHN`. You
   can also open one with |:LxRead| or `:edit logoxide://BSB/JHN`. The

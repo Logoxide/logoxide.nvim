@@ -117,6 +117,27 @@ do
   end
   log("blink colors", vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1], table.concat(groups, " "))
 end
+-- Completion offers the chapter already typed first, unless complete_typed is false
+do
+  local before = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, { "Matthew 1" })
+  vim.wait(300) -- didChange is debounced
+  local function first()
+    local params = { textDocument = vim.lsp.util.make_text_document_params(0), position = { line = 0, character = 9 } }
+    local items = (client:request_sync("textDocument/completion", params, 5000, 0) or {}).result
+    return items and (items.items or items)[1].label
+  end
+  local typed = first()
+  require("logoxide.config").options.complete_typed = false
+  client:notify("workspace/didChangeConfiguration", { settings = { logoxide = require("logoxide.config").lsp_settings() } })
+  vim.wait(300)
+  log("complete typed", typed, first())
+  require("logoxide.config").options.complete_typed = true
+  client:notify("workspace/didChangeConfiguration", { settings = { logoxide = require("logoxide.config").lsp_settings() } })
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, before)
+  vim.bo.modified = false
+  vim.wait(300)
+end
 -- Go to definition opens the whole book, read-only, at the verse
 vim.lsp.buf.definition()
 vim.wait(5000, function() return vim.api.nvim_buf_get_name(0):find("^logoxide://") ~= nil end)

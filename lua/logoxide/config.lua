@@ -46,6 +46,9 @@ M.defaults = {
     -- insertions (nil: no limit; whole books still wrap at the window's width)
     width = nil,
   },
+  -- Completion offers the chapter or verse already typed, first (`Matthew 1` offers Matthew 1,
+  -- then Matthew 10, ...), so its passage shows in the documentation. On by default
+  complete_typed = true,
   -- Search EPUBs in the workspace too: go-to-references and the search commands list their
   -- references, which open in a read-only buffer of the book's text (`logoxide-file:///…/Gill.epub`)
   -- at the reference. Off by default: a book takes a moment to read the first time (then it's
@@ -132,7 +135,7 @@ local function expanded_bibles()
 end
 
 -- The language server's settings: `bible`, `bibles`, `default_bible`, `hover_bibles`, `markup`,
--- `insertions`, `epub`, `pdf`, `commentaries`, `stretch_notes`, and `strongs`, then `lsp.settings`, then the top-level `settings`
+-- `insertions`, `complete_typed`, `epub`, `pdf`, `commentaries`, `stretch_notes`, and `strongs`, then `lsp.settings`, then the top-level `settings`
 function M.lsp_settings()
   local base = { markup = M.options.markup, insertions = M.options.insertions }
   if M.options.bible then
@@ -143,6 +146,9 @@ function M.lsp_settings()
   end
   base['default-bible'] = M.options.default_bible
   base['hover-bibles'] = M.options.hover_bibles
+  if M.options.complete_typed == false then
+    base['complete-typed'] = false
+  end
   if M.options.epub then
     base.epub = true
   end

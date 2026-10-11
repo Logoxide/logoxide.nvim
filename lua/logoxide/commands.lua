@@ -50,7 +50,8 @@ function M.complete_passage(_, cmdline, pos)
   local seen, candidates = {}, {}
   for candidate in (result.stdout or ''):gmatch('[^\n]+') do
     local last = typed:match('%s$') and candidate:match('%S+$') or candidate:match('%S+$')
-    if last and not seen[last] then
+    -- What's typed is already on the command line (topos offers it first, for editors)
+    if last and not seen[last] and candidate ~= vim.trim(typed) then
       seen[last] = true
       table.insert(candidates, last)
     end
