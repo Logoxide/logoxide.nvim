@@ -62,6 +62,11 @@ them (see `auto_build`). Binaries on your PATH work too.
     default_bible = nil,
     -- Bibles whose text hover also shows, like { 'BSB', 'KJV' }
     hover_bibles = nil,
+    -- How hover and completion documentation show a passage's text:
+    -- `trim` leaves out its leading whitespace (a heading displayed as
+    -- '\n{text}' would start with a blank line); `max` is how many
+    -- characters (bytes) show before ` …`, false for no limit
+    hover = { trim = false, max = 2000 },
     -- How Bible text is written and colored (see |logoxide-markup|)
     markup = {
       verse_numbers = { show = true, display = '[{verse}]' },
@@ -300,7 +305,9 @@ Digital Bible Library, and eBible.org publish them. The folder's name names
 the Bible. Its files are left out of workspace searches. Then:
 
 - Hovering a reference (|K|) shows the passage's text, with the heading
-  before it.
+  before it, cut after `hover.max` characters (2000; false for no limit).
+  `hover.trim = true` leaves out its leading whitespace, like the blank line
+  a heading or chapter label displayed as '\n{text}' starts with.
 - Completing a chapter or verse shows its text as the item's documentation
   (with 'completeopt' "popup", or your completion plugin's documentation).
   The chapter or verse already typed is offered first (`Matthew 1` before

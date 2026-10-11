@@ -138,6 +138,30 @@ do
   vim.bo.modified = false
   vim.wait(300)
 end
+-- `hover.trim` leaves out a heading's leading line break, and `hover.max` cuts the text
+do
+  local options = require("logoxide.config").options
+  local function configure()
+    client:notify("workspace/didChangeConfiguration", { settings = { logoxide = require("logoxide.config").lsp_settings() } })
+    vim.wait(300)
+  end
+  local function first_line()
+    local params = vim.lsp.util.make_position_params(0, "utf-16")
+    params.position = { line = 0, character = 6 }
+    local value = ""
+    for _, r in pairs(vim.lsp.buf_request_sync(0, "textDocument/hover", params, 5000) or {}) do value = r.result and r.result.contents.value or value end
+    return vim.inspect(value:match("\n```logoxide[^\n]*\n([^\n]*)"))
+  end
+  options.markup.headings.display = "\n{text}"
+  configure()
+  local untrimmed = first_line()
+  options.hover = { trim = true, max = 10 }
+  configure()
+  log("hover trim", untrimmed, first_line())
+  options.markup.headings.display = "{text}"
+  options.hover = { trim = false, max = 2000 }
+  configure()
+end
 -- Go to definition opens the whole book, read-only, at the verse
 vim.lsp.buf.definition()
 vim.wait(5000, function() return vim.api.nvim_buf_get_name(0):find("^logoxide://") ~= nil end)

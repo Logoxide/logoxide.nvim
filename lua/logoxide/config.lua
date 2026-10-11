@@ -21,6 +21,12 @@ M.defaults = {
   default_bible = nil,
   -- Bibles whose text hover also shows, after the one a reference names, like { 'BSB', 'KJV' }
   hover_bibles = nil,
+  -- How hover (and completion documentation) shows a passage's text, a note's, or an entry's:
+  --   trim  leave out its leading whitespace (a chapter label or heading displayed after a line
+  --         break, '\n{text}', starts the float with a blank line). Off by default
+  --   max   how many characters (bytes) to show before cutting it with ' …'; false (or 0) for
+  --         no limit
+  hover = { trim = false, max = 2000 },
   -- How Bible text is written and colored (see :help logoxide-markup). Each element has:
   --   show       whether it is shown (hidden headings and notes are left out; the others are
   --              plain text, without their display or color)
@@ -134,7 +140,7 @@ local function expanded_bibles()
   return bibles
 end
 
--- The language server's settings: `bible`, `bibles`, `default_bible`, `hover_bibles`, `markup`,
+-- The language server's settings: `bible`, `bibles`, `default_bible`, `hover_bibles`, `hover`, `markup`,
 -- `insertions`, `complete_typed`, `epub`, `pdf`, `commentaries`, `stretch_notes`, and `strongs`, then `lsp.settings`, then the top-level `settings`
 function M.lsp_settings()
   local base = { markup = M.options.markup, insertions = M.options.insertions }
@@ -146,6 +152,13 @@ function M.lsp_settings()
   end
   base['default-bible'] = M.options.default_bible
   base['hover-bibles'] = M.options.hover_bibles
+  local hover = M.options.hover or {}
+  if hover.trim then
+    base['hover-trim'] = true
+  end
+  if hover.max ~= nil then
+    base['hover-max'] = hover.max or 0
+  end
   if M.options.complete_typed == false then
     base['complete-typed'] = false
   end
