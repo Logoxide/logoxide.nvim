@@ -124,6 +124,7 @@ check() {
     'poetry indent  [1] Blessed is the man|     that walketh not.' \
     'read starts lsp 1 logoxide://BSB/ROM true' \
     'unnamed before 0' 'unnamed after 1 John 3:16' 'unnamed reformat Read John 3:16 today' 'unnamed edited Romans 8:28' 'restarted 1 true true true' \
+    'stopped 0 0' 'started again 1' \
     'book off true' 'book file logoxide-file true Rom 8:28 Gill' \
     'complete typed Matthew 1 Matthew 10' 'hover trim "" "Jesus and …"' \
     'file references 4 1 3 2 1' 'dir references 5 1' \

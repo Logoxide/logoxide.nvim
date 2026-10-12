@@ -112,6 +112,12 @@ local commands = {
     end,
     { desc = 'Write the passage under the cursor with the template chosen, as its code action does' },
   },
+  LxLspStop = {
+    function()
+      api().lsp_stop()
+    end,
+    { desc = 'Stop logoxide-lsp (and don\'t start it with new buffers until :LxLspStart)' },
+  },
   LxLspStart = {
     function()
       api().lsp_start()

@@ -27,6 +27,7 @@ With lazy.nvim: >lua
     cmd = { 'LxSearch', 'LxQuery', 'LxExplicitOverlap', 'LxAnyOverlap',
             'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxFileReferences',
             'LxDirReferences', 'LxCopy', 'LxInsert', 'LxBuild', 'LxLspStart',
+            'LxLspStop',
             'LxRead', 'LxBibleAdd', 'LxBibleSearch', 'LxBibleRemove' },
     opts = {
       bible = '~/Bibles/BSB',
@@ -208,7 +209,12 @@ completed with <Tab> (`John 3:` lists every verse).
                         file type (an unnamed buffer too), or restarts it if
                         it is running (re-attaching its buffers). Neovim can't
                         route diagnostics to an unnamed buffer, so the plugin
-                        asks for them itself as you edit.
+                        asks for them itself as you edit. After |:LxLspStop|,
+                        it starts with new buffers again.
+
+                                                               *:LxLspStop*
+:LxLspStop           Stops logoxide-lsp, and doesn't start it with new
+                        buffers until |:LxLspStart|.
 
                                                                  *:LxBible*
 :LxBible [name]      References that name no Bible use this one (a name
@@ -313,6 +319,7 @@ the searches); the moving ones take a count (1 by default): >lua
   logoxide.bible_add(source)               -- :LxBibleAdd
   logoxide.bible_remove(id)                -- :LxBibleRemove
   logoxide.lsp_start()                     -- :LxLspStart
+  logoxide.lsp_stop()                      -- :LxLspStop
   logoxide.build(force)                    -- :LxBuild[!]
 <
 The plugin maps no keys. For moving through a whole book, for example: >lua

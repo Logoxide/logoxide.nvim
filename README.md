@@ -16,7 +16,7 @@ With [lazy.nvim](https://lazy.folke.io):
   ft = { 'markdown', 'text' },
   cmd = { 'LxSearch', 'LxQuery', 'LxExplicitOverlap', 'LxAnyOverlap',
           'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxFileReferences',
-          'LxDirReferences', 'LxCopy', 'LxInsert', 'LxBuild', 'LxLspStart',
+          'LxDirReferences', 'LxCopy', 'LxInsert', 'LxBuild', 'LxLspStart', 'LxLspStop',
           'LxBible', 'LxParallel', 'LxRead', 'LxBibleAdd', 'LxBibleSearch',
           'LxBibleRemove', 'LxNextBook', 'LxPrevBook', 'LxNextChapter',
           'LxPrevChapter', 'LxNextVerse', 'LxPrevVerse', 'LxNextHeading',

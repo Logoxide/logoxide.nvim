@@ -521,7 +521,31 @@ end)
 local restarted = vim.lsp.get_clients({ name = "logoxide" })
 local open = vim.fn.bufnr(WORK .. "/ws/open.txt")
 log("restarted", #restarted, restarted[1].id ~= first, restarted[1].attached_buffers[scratch] ~= nil, restarted[1].attached_buffers[open] ~= nil)
+-- :LxLspStop: no server, no diagnostics of its own, and none started for a new note; then
+-- :LxLspStart again, which starts with new notes too
+do
+  vim.cmd("LxLspStop")
+  vim.wait(3000, function() return #vim.lsp.get_clients({ name = "logoxide" }) == 0 end)
+  vim.fn.writefile({ "John 3:16" }, WORK .. "/ws/stopped.txt")
+  vim.cmd("edit " .. WORK .. "/ws/stopped.txt")
+  vim.wait(500)
+  log("stopped", #vim.lsp.get_clients({ name = "logoxide" }), #vim.diagnostic.get(scratch))
+  vim.cmd("LxLspStart")
+  vim.wait(5000, function() return #vim.lsp.get_clients({ bufnr = 0, name = "logoxide" }) > 0 end)
+  vim.fn.writefile({ "John 3:17" }, WORK .. "/ws/again.txt")
+  vim.cmd("edit " .. WORK .. "/ws/again.txt")
+  vim.wait(5000, function() return #vim.lsp.get_clients({ bufnr = 0, name = "logoxide" }) > 0 end)
+  log("started again", #vim.lsp.get_clients({ bufnr = 0, name = "logoxide" }))
+  for _, name in ipairs({ "stopped.txt", "again.txt" }) do
+    vim.cmd("bwipeout " .. WORK .. "/ws/" .. name)
+    os.remove(WORK .. "/ws/" .. name)
+  end
+  vim.cmd("LxLspStart")
+  vim.wait(5000, function() return #vim.lsp.get_clients({ name = "logoxide" }) > 0 end)
+  client = vim.lsp.get_clients({ name = "logoxide" })[1]
+end
 vim.cmd("buffer " .. open)
+vim.wait(5000, function() return #vim.lsp.get_clients({ bufnr = 0, name = "logoxide" }) > 0 end)
 -- `epub`: the EPUB's references, opened in its text at the reference
 do
   local client = vim.lsp.get_clients({ name = "logoxide" })[1]

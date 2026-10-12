@@ -116,12 +116,15 @@ end
 --[[
 :LxLspStart: restarts logoxide-lsp if it is running, or starts it for the current buffer even
 if its file type isn't one of `lsp.filetypes` (or it has no name). A restart re-attaches every
-buffer the server had, plus the current one.
+buffer the server had, plus the current one. It starts with new buffers again after :LxLspStop.
 ]]
 function M.lsp_start()
   local path = bin.path('lsp')
   if not path then
     return vim.notify('logoxide: logoxide-lsp is not built yet; run :LxBuild', vim.log.levels.ERROR)
+  end
+  if started then
+    vim.lsp.enable('logoxide')
   end
   local buffers = { [vim.api.nvim_get_current_buf()] = true }
   local running = vim.lsp.get_clients({ name = 'logoxide' })
@@ -158,6 +161,20 @@ function M.lsp_start()
     end
   end
   vim.notify(('logoxide: %s logoxide-lsp'):format(#running > 0 and 'restarted' or 'started'))
+end
+
+-- :LxLspStop: stops logoxide-lsp, and doesn't start it with new buffers until :LxLspStart
+function M.lsp_stop()
+  if started then
+    vim.lsp.enable('logoxide', false)
+  end
+  local running = vim.lsp.get_clients({ name = 'logoxide' })
+  for _, client in ipairs(running) do
+    client:stop(true)
+  end
+  -- The diagnostics the plugin set itself (unnamed buffers), which Neovim doesn't clear
+  vim.diagnostic.reset(unnamed_ns)
+  vim.notify(#running > 0 and 'logoxide: stopped logoxide-lsp' or 'logoxide: logoxide-lsp is not running')
 end
 
 --[[
