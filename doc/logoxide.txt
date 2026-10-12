@@ -25,7 +25,8 @@ With lazy.nvim: >lua
     dependencies = { 'nvim-telescope/telescope.nvim' }, -- optional
     ft = { 'markdown', 'text' },
     cmd = { 'LxSearch', 'LxQuery', 'LxExplicitOverlap', 'LxAnyOverlap',
-            'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxBuild', 'LxLspStart',
+            'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxFileReferences',
+            'LxDirReferences', 'LxBuild', 'LxLspStart',
             'LxRead', 'LxBibleAdd', 'LxBibleSearch', 'LxBibleRemove' },
     opts = {
       bible = '~/Bibles/BSB',
@@ -168,6 +169,19 @@ the language server's workspace folder (or a root marker, or the cwd).
 Without a passage, these use the reference under the cursor. Passages are
 completed with <Tab> (`John 3:` lists every verse).
 
+:LxFileReferences [passage]                          *:LxFileReferences*
+                        The references in the current buffer (its unsaved
+                        text too). In Telescope the prompt is a passage that
+                        narrows them as you type: `mat 1` keeps the
+                        references inside Matthew 1, a book alone (`mat`)
+                        keeps the whole book's, and a prompt starting with
+                        `-` is the CLI's options (`-g Gospels`). The
+                        passage given starts the prompt; in the quickfix
+                        list it narrows the results once.
+:LxDirReferences [passage]                            *:LxDirReferences*
+                        The same, for every file under the current
+                        directory (|:pwd|).
+
                                                               *:LxLspStart*
 :LxLspStart          Starts logoxide-lsp for the current buffer, whatever its
                         file type (an unnamed buffer too), or restarts it if
@@ -264,6 +278,8 @@ the searches); the moving ones take a count (1 by default): >lua
   logoxide.query('-g Wisdom')              -- :LxQuery
   logoxide.explicit_overlap(passage)       -- :LxExplicitOverlap, and
   -- any_overlap, exact_overlap, inside, exclude_overlap
+  logoxide.file_references(passage)        -- :LxFileReferences
+  logoxide.dir_references(passage)         -- :LxDirReferences
   logoxide.read(book, mods)                -- :LxRead ('John KJV', 'vertical')
   logoxide.next_book(count)                -- :LxNextBook, and prev_book,
   -- next_chapter, prev_chapter, next_verse, prev_verse, next_heading,
@@ -299,9 +315,11 @@ The plugin maps no keys. For moving through a whole book, for example: >lua
   :Telescope logoxide query args=-g\ Wisdom
   :Telescope logoxide explicit_overlap passage=John\ 3:16
   :Telescope logoxide any_overlap              " the reference under the cursor
+  :Telescope logoxide file_references passage=mat\ 1
 <
 The pickers are `search`, `query`, `explicit_overlap`, `any_overlap`,
-`exact_overlap`, `inside`, and `exclude_overlap`. From Lua: >lua
+`exact_overlap`, `inside`, `exclude_overlap`, and `file_references` and
+`dir_references` (|:LxFileReferences|). From Lua: >lua
   require('telescope').extensions.logoxide.exact_overlap({ passage = 'Rom 8:28' })
 <
 ==============================================================================

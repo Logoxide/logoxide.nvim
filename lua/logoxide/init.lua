@@ -230,6 +230,15 @@ for _, kind in ipairs({ 'explicit_overlap', 'any_overlap', 'exact_overlap', 'ins
   end
 end
 
+-- :LxFileReferences [passage] and :LxDirReferences [passage]
+function M.file_references(passage)
+  require('logoxide.search').references('buffer', passage)
+end
+
+function M.dir_references(passage)
+  require('logoxide.search').references('directory', passage)
+end
+
 -- :LxBible [name]
 function M.bible(name)
   require('logoxide.bibles').set_default(name)

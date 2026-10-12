@@ -125,7 +125,8 @@ check() {
     'read starts lsp 1 logoxide://BSB/ROM true' \
     'unnamed before 0' 'unnamed after 1 John 3:16' 'unnamed reformat Read John 3:16 today' 'unnamed edited Romans 8:28' 'restarted 1 true true true' \
     'book off true' 'book file logoxide-file true Rom 8:28 Gill' \
-    'complete typed Matthew 1 Matthew 10' 'hover trim "" "Jesus and …"'; do
+    'complete typed Matthew 1 Matthew 10' 'hover trim "" "Jesus and …"' \
+    'file references 4 1 3 2 1' 'dir references 5 1'; do
     if ! grep -qxF "$line" <<<"$output"; then
       echo "FAIL ($name): expected '$line'"
       grep -E '^(unnamed|restarted|ERROR)' <<<"$output" || true
@@ -140,6 +141,7 @@ if [[ -d "$plugins/telescope.nvim" && -d "$plugins/plenary.nvim" ]]; then
   output=$(run WITH_TELESCOPE=1 PLUGINS="$plugins")
   check telescope "$output"
   grep -q 'telescope ext Search "Rom 8:28" for explicit overlap 1' <<<"$output" || { echo "FAIL (telescope extension)"; status=1; }
+  grep -qxF 'live references 1 2 4 0' <<<"$output" || { echo "FAIL (telescope live references)"; grep '^live' <<<"$output"; status=1; }
   grep -qxF 'read picker Read BSB 2 John @lsp.type.heading.logoxide' <<<"$output" || { echo "FAIL (telescope :LxRead)"; grep '^read picker' <<<"$output"; status=1; }
 else
   echo "skipped (telescope): not found in $plugins"

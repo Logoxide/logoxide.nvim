@@ -80,6 +80,26 @@ local commands = {
     end,
     { nargs = '+', complete = M.complete_flags, desc = 'Search with the CLI\'s options, like -g Wisdom' },
   },
+  LxFileReferences = {
+    function(opts)
+      api().file_references(opts.args)
+    end,
+    {
+      nargs = '*',
+      complete = M.complete_passage,
+      desc = 'The references in this buffer, narrowed by a passage as you type it (in Telescope)',
+    },
+  },
+  LxDirReferences = {
+    function(opts)
+      api().dir_references(opts.args)
+    end,
+    {
+      nargs = '*',
+      complete = M.complete_passage,
+      desc = 'The references under the current directory, narrowed by a passage as you type it (in Telescope)',
+    },
+  },
   LxLspStart = {
     function()
       api().lsp_start()

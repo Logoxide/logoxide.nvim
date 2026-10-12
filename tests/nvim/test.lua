@@ -70,6 +70,41 @@ if telescope then
   log("telescope ext", results(function() require("telescope").extensions.logoxide.explicit_overlap({ passage = "Rom 8:28" }) end))
   log("telescope ext query", results(function() require("telescope").extensions.logoxide.query({ args = '-g "Pauline Epistles"' }) end))
 end
+-- :LxFileReferences and :LxDirReferences: the references narrowed by a passage or a book alone
+-- (as you type, in Telescope), in an unsaved buffer's own text too
+do
+  local function count(buf, cmd)
+    vim.cmd(buf)
+    return select(2, results(cmd))
+  end
+  local b = "edit " .. WORK .. "/ws/b.txt"
+  local all, john, gospels = count(b, "LxFileReferences"), count(b, "LxFileReferences john 3"), count(b, "LxFileReferences -g Gospels")
+  vim.cmd(b); vim.api.nvim_buf_set_lines(0, -1, -1, false, { "Mark 1:1 and Mark 2:3" })
+  local unsaved = count("buffer " .. WORK .. "/ws/b.txt", "LxFileReferences mar")
+  vim.cmd("buffer " .. WORK .. "/ws/b.txt | edit!")
+  vim.cmd("enew"); vim.api.nvim_buf_set_lines(0, 0, -1, false, { "Jude 5" })
+  local unnamed = vim.api.nvim_get_current_buf()
+  local jude = count("buffer " .. unnamed, "LxFileReferences")
+  vim.cmd("bwipeout! " .. unnamed)
+  log("file references", all, john, gospels, unsaved, jude)
+  log("dir references", count("buffer " .. WORK .. "/ws/open.txt", "LxDirReferences john"), select(2, results("LxDirReferences rom 8")))
+  if telescope then
+    vim.cmd("buffer " .. WORK .. "/ws/b.txt")
+    require("telescope").extensions.logoxide.file_references({ passage = "rom" })
+    vim.wait(5000, function() return vim.bo.filetype == "TelescopePrompt" end)
+    vim.wait(300)
+    local picker = require("telescope.actions.state").get_current_picker(vim.api.nvim_get_current_buf())
+    local typed = { picker.manager:num_results() }
+    for _, prompt in ipairs({ "john", "", "zzz" }) do
+      picker:set_prompt(prompt)
+      vim.wait(500)
+      table.insert(typed, picker.manager:num_results())
+    end
+    require("telescope.actions").close(vim.api.nvim_get_current_buf())
+    vim.wait(100)
+    log("live references", table.concat(typed, " "))
+  end
+end
 -- The Bible: the reference's text in hover
 vim.cmd("buffer " .. WORK .. "/ws/open.txt")
 vim.api.nvim_win_set_cursor(0, { 1, 6 })

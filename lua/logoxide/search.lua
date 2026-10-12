@@ -61,16 +61,25 @@ local function cli()
   return path
 end
 
--- One CLI match as a list item (filename, lnum, col, text) plus what the pickers show
-local function item(line, root)
+-- One CLI match as a list item (filename, lnum, col, text) plus what the pickers show; a match
+-- in `--text` (no path) is in the buffer `bufnr`
+local function item(line, root, bufnr)
   local ok, m = pcall(vim.json.decode, line)
-  if not ok or type(m) ~= 'table' or type(m.path) ~= 'string' then
+  if not ok or type(m) ~= 'table' or (type(m.path) ~= 'string' and not bufnr) then
     return nil
   end
-  local path = m.path:gsub('^%./', '')
-  local filename = path:match('^/') and path or vim.fs.joinpath(root, path)
+  local path, filename
+  if type(m.path) == 'string' then
+    path = m.path:gsub('^%./', '')
+    filename = path:match('^/') and path or vim.fs.joinpath(root, path)
+  else
+    local name = vim.api.nvim_buf_get_name(bufnr)
+    path = name ~= '' and vim.fn.fnamemodify(name, ':.') or '[No Name]'
+    filename = name ~= '' and name or nil
+  end
   local line_text = vim.trim(m.line_text or '')
   return {
+    bufnr = not filename and bufnr or nil,
     filename = filename,
     path = path,
     lnum = m.line,
@@ -83,17 +92,38 @@ local function item(line, root)
   }
 end
 
--- Shows items the way go-to-references does: a Telescope picker, or the quickfix list
-function M.show(title, items)
-  if #items == 0 then
-    return vim.notify(title .. ': nothing found')
-  end
+-- An item as a Telescope entry
+local function entry(it)
+  local where = string.format('%s:%d', it.path or vim.fn.fnamemodify(it.filename, ':.'), it.lnum)
+  local label = it.reference and (it.reference .. '  ') or ''
+  local text = it.line_text or it.text or ''
+  return {
+    value = it,
+    display = label .. where .. '  ' .. text,
+    ordinal = label .. where .. ' ' .. text,
+    filename = it.filename,
+    bufnr = it.bufnr,
+    lnum = it.lnum,
+    col = it.col,
+  }
+end
+
+-- Whether results open in Telescope (else the quickfix list), as `picker` says
+local function use_telescope()
   local picker = config.options.picker
   local has_telescope = picker ~= 'quickfix' and pcall(require, 'telescope')
   if picker == 'telescope' and not has_telescope then
     vim.notify('logoxide: Telescope is not installed; using the quickfix list', vim.log.levels.WARN)
   end
-  if not has_telescope then
+  return has_telescope
+end
+
+-- Shows items the way go-to-references does: a Telescope picker, or the quickfix list
+function M.show(title, items)
+  if #items == 0 then
+    return vim.notify(title .. ': nothing found')
+  end
+  if not use_telescope() then
     vim.fn.setqflist({}, ' ', { title = title, items = items })
     return vim.cmd('botright copen')
   end
@@ -101,26 +131,20 @@ function M.show(title, items)
   require('telescope.pickers')
     .new({}, {
       prompt_title = title,
-      finder = require('telescope.finders').new_table({
-        results = items,
-        entry_maker = function(entry)
-          local where = string.format('%s:%d', entry.path or vim.fn.fnamemodify(entry.filename, ':.'), entry.lnum)
-          local label = entry.reference and (entry.reference .. '  ') or ''
-          local text = entry.line_text or entry.text or ''
-          return {
-            value = entry,
-            display = label .. where .. '  ' .. text,
-            ordinal = label .. where .. ' ' .. text,
-            filename = entry.filename,
-            lnum = entry.lnum,
-            col = entry.col,
-          }
-        end,
-      }),
+      finder = require('telescope.finders').new_table({ results = items, entry_maker = entry }),
       previewer = conf.qflist_previewer({}),
       sorter = conf.generic_sorter({}),
     })
     :find()
+end
+
+-- What the CLI searches for a buffer: its file if it's saved, else its text
+local function buffer_source(bufnr)
+  local name = vim.api.nvim_buf_get_name(bufnr)
+  if name ~= '' and not vim.bo[bufnr].modified and vim.uv.fs_stat(name) then
+    return { name }
+  end
+  return { '--text', table.concat(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false), '\n') }
 end
 
 -- Whether any argument is an existing file or folder (else the search covers the root)
@@ -133,7 +157,8 @@ local function names_a_path(args, root)
   return false
 end
 
--- Runs `topos -m json --sort ARGS` in the root and shows what it finds
+-- Runs `topos -m json --sort ARGS` in the root and shows what it finds (in the buffer
+-- `opts.bufnr`, if given)
 function M.run(args, title, opts)
   opts = opts or {}
   local path = cli()
@@ -143,8 +168,10 @@ function M.run(args, title, opts)
   local root = opts.root or M.root()
   local cmd = { path, '-m', 'json', '--sort' }
   vim.list_extend(cmd, args)
+  if opts.bufnr then
+    vim.list_extend(cmd, buffer_source(opts.bufnr))
   -- Searching the root unless a path was given (and never reading stdin)
-  if not names_a_path(args, root) then
+  elseif not names_a_path(args, root) then
     table.insert(cmd, '.')
   end
   vim.system(cmd, { cwd = root, text = true }, function(result)
@@ -156,7 +183,7 @@ function M.run(args, title, opts)
       end
       local items = {}
       for line in (result.stdout or ''):gmatch('[^\n]+') do
-        table.insert(items, item(line, root))
+        table.insert(items, item(line, root, opts.bufnr))
       end
       M.show(title, items)
       if opts.done then
@@ -192,6 +219,57 @@ function M.passage(kind, passage)
     return vim.notify('logoxide: give a passage, or put the cursor on a reference', vim.log.levels.WARN)
   end
   M.run({ spec.flag, passage }, spec.title:format(passage))
+end
+
+-- The CLI's options for what's typed in a live search: a passage (`mat 1`, or a book alone) keeps
+-- the references inside it, and options (`-g Gospels`) are passed as they are
+function M.filter(prompt)
+  prompt = vim.trim(prompt or '')
+  if prompt == '' then
+    return {}
+  elseif prompt:match('^%-') then
+    return M.split(prompt)
+  end
+  return { '-i', prompt }
+end
+
+--[[
+The references in the current buffer (`scope` 'buffer') or under the current directory
+('directory'), narrowed by a passage: in Telescope, what's typed in the prompt (starting with
+`passage`) filters them as you type; in the quickfix list, `passage` does once
+]]
+function M.references(scope, passage)
+  local bufnr = scope == 'buffer' and vim.api.nvim_get_current_buf() or nil
+  local root = bufnr and M.root(bufnr) or vim.fn.getcwd()
+  local where = bufnr and 'this buffer' or vim.fn.fnamemodify(root, ':~')
+  passage = vim.trim(passage or '')
+  if not use_telescope() then
+    local title = 'References in ' .. where .. (passage ~= '' and (' (' .. passage .. ')') or '')
+    return M.run(M.filter(passage), title, { root = root, bufnr = bufnr })
+  end
+  local path = cli()
+  if not path then
+    return
+  end
+  local source = bufnr and buffer_source(bufnr) or { '.' }
+  local conf = require('telescope.config').values
+  require('telescope.pickers')
+    .new({}, {
+      prompt_title = 'References in ' .. where .. ' (a passage, or topos options)',
+      default_text = passage,
+      debounce = 100,
+      finder = require('telescope.finders').new_job(function(prompt)
+        local cmd = { path, '-m', 'json', '--sort' }
+        vim.list_extend(cmd, M.filter(prompt))
+        return vim.list_extend(cmd, source)
+      end, function(line)
+        local it = item(line, root, bufnr)
+        return it and entry(it)
+      end, nil, root),
+      previewer = conf.qflist_previewer({}),
+      sorter = require('telescope.sorters').empty(),
+    })
+    :find()
 end
 
 return M

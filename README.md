@@ -15,11 +15,11 @@ With [lazy.nvim](https://lazy.folke.io):
   dependencies = { 'nvim-telescope/telescope.nvim' }, -- optional
   ft = { 'markdown', 'text' },
   cmd = { 'LxSearch', 'LxQuery', 'LxExplicitOverlap', 'LxAnyOverlap',
-          'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxBuild', 'LxLspStart',
-          'LxBible', 'LxParallel', 'LxRead', 'LxBibleAdd', 'LxBibleSearch',
-          'LxBibleRemove', 'LxNextBook', 'LxPrevBook', 'LxNextChapter',
-          'LxPrevChapter', 'LxNextVerse', 'LxPrevVerse', 'LxNextHeading',
-          'LxPrevHeading' },
+          'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxFileReferences',
+          'LxDirReferences', 'LxBuild', 'LxLspStart', 'LxBible', 'LxParallel',
+          'LxRead', 'LxBibleAdd', 'LxBibleSearch', 'LxBibleRemove', 'LxNextBook',
+          'LxPrevBook', 'LxNextChapter', 'LxPrevChapter', 'LxNextVerse',
+          'LxPrevVerse', 'LxNextHeading', 'LxPrevHeading' },
   opts = {
     -- A folder of USX files, one book each (JHN.usx): hover shows the text, and go to
     -- definition opens the whole book
@@ -91,7 +91,9 @@ With [lazy.nvim](https://lazy.folke.io):
 - **Commands**: `:LxSearch` (every reference), `:LxQuery -g Wisdom` (the CLI's options,
   completed with Tab), and `:LxExplicitOverlap John 3:16`, `:LxAnyOverlap`,
   `:LxExactOverlap`, `:LxInside`, `:LxExcludeOverlap` (the reference under the cursor
-  by default)
+  by default), and `:LxFileReferences` / `:LxDirReferences` (the references in this buffer or
+  under the current directory; in Telescope, typing a passage like `mat 1`, or a book alone,
+  narrows them as you type)
 - **Telescope**: `:Telescope logoxide`, plus a picker per search; without Telescope, results open
   in the quickfix list
 
