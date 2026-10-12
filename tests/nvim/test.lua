@@ -239,16 +239,22 @@ do
   end
   local named = hover(1, 6)
   log("named hover", named:match("^[^\n]*"), named:match("that he gave"))
-  log("default hover", hover(2, 6):match("\n(%*%u+%*)\n"))
+  -- `hover.title` names the Bible shown (sent with the settings :LxBible sends)
+  local hover_options = require("logoxide.config").options.hover
+  hover_options.title = "{reference} from {bible}"
+  vim.cmd("LxBible BSB")
+  vim.wait(3000, function() return hover(2, 6):find("from BSB", 1, true) ~= nil end)
+  log("default hover", hover(2, 6):match("^[^\n]*"))
   vim.wait(3000, function() return #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.WARN }) > 0 end)
   for _, d in ipairs(vim.diagnostic.get(0, { severity = vim.diagnostic.severity.WARN })) do
     log("missing in KJV", d.message)
   end
   vim.cmd("LxBible AV")
-  vim.wait(3000, function() return hover(2, 6):find("*KJV*", 1, true) ~= nil end)
-  log("set default hover", hover(2, 6):match("\n(%*%u+%*)\n"))
+  vim.wait(3000, function() return hover(2, 6):find("from KJV", 1, true) ~= nil end)
+  log("set default hover", hover(2, 6):match("^[^\n]*"))
+  hover_options.title = nil
   vim.cmd("LxBible BSB")
-  vim.wait(3000, function() return hover(2, 6):find("*BSB*", 1, true) ~= nil end)
+  vim.wait(3000, function() return hover(2, 6):find("^%*%*John 3:16%*%*\n") ~= nil end)
 end
 -- :LxParallel: the KJV's John next to the BSB's, on the same verse
 do

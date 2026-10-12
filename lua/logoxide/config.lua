@@ -26,7 +26,11 @@ M.defaults = {
   --         break, '\n{text}', starts the float with a blank line). Off by default
   --   max   how many characters (bytes) to show before cutting it with ' …'; false (or 0) for
   --         no limit
-  hover = { trim = false, max = 2000 },
+  --   title  the hover's first line: {reference} (as formatted), {bible} (the Bible whose text
+  --          shows first), {translation} (the Bible the reference names; when it names none,
+  --          nothing, with the brackets around it); false for no first line. Default
+  --          '**{reference}** ({translation})'
+  hover = { trim = false, max = 2000, title = nil },
   -- How Bible text is written and colored (see :help logoxide-markup). Each element has:
   --   show       whether it is shown (hidden headings and notes are left out; the others are
   --              plain text, without their display or color)
@@ -80,7 +84,10 @@ M.defaults = {
   -- Ways to insert a passage's text below a reference, each a code action ("Insert Callout"):
   --   name         the action is "Insert {name}"
   --   display      what is inserted: {text} (the passage), {reference} (John 3:16), {osis}
-  --                (John.3.16), {bible} (the Bible's name); default '{text}'
+  --                (John.3.16), {bible} (the Bible's name), {translation} (its name unless it's
+  --                the default Bible and the reference names none; then nothing, with the
+  --                brackets around it, so '{reference} ({translation})' is 'John 3:16');
+  --                default '{text}'
   --   line_prefix  written before each line of {text}, like '> '
   --   markup       `markup` for this insertion, over the one above (same keys; no colors)
   --   replace      what it replaces: 'line' (the reference's whole line), 'inline' (just the
@@ -175,6 +182,9 @@ function M.lsp_settings()
   end
   if hover.max ~= nil then
     base['hover-max'] = hover.max or 0
+  end
+  if hover.title ~= nil then
+    base['hover-title'] = hover.title or ''
   end
   if M.options.complete_typed == false then
     base['complete-typed'] = false

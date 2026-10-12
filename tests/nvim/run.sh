@@ -111,8 +111,8 @@ check() {
     'book line [16] For God so loved the world. [17] Jesus said, I did not come to condemn.' \
     'book cursor 4 0' 'book title John' 'woj @lsp.type.wordsOfJesus.logoxide 16711680' \
     'verse number @lsp.type.verseNumber.logoxide Special' 'book references 4' 'tag true 4' \
-    'bibles BSB|KJV' 'named hover **John 3:16** (KJV) that he gave' 'default hover *BSB*' \
-    'missing in KJV John 3:17 does not exist in the KJV' 'set default hover *KJV*' \
+    'bibles BSB|KJV' 'named hover **John 3:16** (KJV) that he gave' 'default hover John 3:16 from BSB' \
+    'missing in KJV John 3:17 does not exist in the KJV' 'set default hover John 3:16 from KJV' \
     'parallel logoxide://KJV/JHN [16] For God so loved the world, that he gave his only begotten Son.' \
     'parallel follows John 3' 'parallel book logoxide://BSB/ROM logoxide://KJV/ROM' 'parallel column [29] For whom' \
     'parallel stays true [29] For those God foreknew.=LogoxideParallelVerse kjv:' 'health bibles 2' \

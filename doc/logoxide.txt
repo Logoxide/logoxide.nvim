@@ -49,7 +49,7 @@ them (see `auto_build`). Binaries on your PATH work too.
     --   ['reference-diagnostics'] = 'info' | 'hint' | 'never',
     --   hover = { 'text', 'name', 'abbreviation', 'osis', 'book',
     --             'testament', 'genres', 'verses', 'location', 'written',
-    --             'bcv' } }
+    --             'bcv', 'translation' } }
     settings = {},
     -- A folder of USX files, one book each (see |logoxide-text|)
     bible = nil,
@@ -65,8 +65,10 @@ them (see `auto_build`). Binaries on your PATH work too.
     -- How hover and completion documentation show a passage's text:
     -- `trim` leaves out its leading whitespace (a heading displayed as
     -- '\n{text}' would start with a blank line); `max` is how many
-    -- characters (bytes) show before ` …`, false for no limit
-    hover = { trim = false, max = 2000 },
+    -- characters (bytes) show before ` …`, false for no limit; `title`
+    -- is the first line (see |logoxide-translations|), false for none
+    hover = { trim = false, max = 2000,
+              title = '**{reference}** ({translation})' },
     -- How Bible text is written and colored (see |logoxide-markup|)
     markup = {
       verse_numbers = { show = true, display = '[{verse}]' },
@@ -365,6 +367,17 @@ uses that Bible; other references use `default_bible`. Then:
   its USX), and a warning names it: `John 3:17 does not exist in the KJV`.
 - Insertions use it; a reference that names none offers one per Bible
   (`Insert Callout (KJV)`), and `{bible}` in `display` is the Bible's name.
+  `{translation}` is its name too, unless it's the default Bible and the
+  reference names none: then it's nothing, along with the brackets around
+  it and the space before it, so `'> [!bible] {reference} ({translation})'`
+  writes `John 3:16 (KJV)` for the KJV and `John 3:16` for the default.
+- Hover's first line is `hover.title`, the same way: `{reference}`,
+  `{bible}` (the Bible whose text shows first), and `{translation}` (the
+  Bible the reference names). By default `'**{reference}** ({translation})'`;
+  false leaves the line out. The `translation` field of the `hover`
+  setting is a line naming it (`- Translation: KJV`), when there is one.
+  A text is labeled with its Bible's name only when hover shows several
+  (with `hover_bibles`).
 
                                                     *logoxide-commentaries*
 Commentaries and dictionaries come from the project (`lx add` them like any
@@ -479,8 +492,9 @@ action (|gra|) named "Insert {name}". Each takes:
 
   name          The action's name.
   display       What is inserted: `{text}`
-                (the passage), `{reference}` (as formatted, `John 3:16`), and
-                `{osis}` (`John.3.16`). Default `'{text}'`.
+                (the passage), `{reference}` (as formatted, `John 3:16`),
+                `{osis}` (`John.3.16`), `{bible}`, and `{translation}` (see
+                |logoxide-translations|). Default `'{text}'`.
   line_prefix   Written before each line of `{text}`, like `'> '`.
   markup        `markup` for this insertion, over the one above (the same
                 keys, without colors).
