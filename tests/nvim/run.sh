@@ -114,7 +114,8 @@ check() {
     'bibles BSB|KJV' 'named hover **John 3:16** (KJV) that he gave' 'default hover *BSB*' \
     'missing in KJV John 3:17 does not exist in the KJV' 'set default hover *KJV*' \
     'parallel logoxide://KJV/JHN [16] For God so loved the world, that he gave his only begotten Son.' \
-    'parallel follows John 3' 'parallel book logoxide://BSB/ROM logoxide://KJV/ROM' 'parallel column [29] For whom' 'health bibles 2' \
+    'parallel follows John 3' 'parallel book logoxide://BSB/ROM logoxide://KJV/ROM' 'parallel column [29] For whom' \
+    'parallel stays true [29] For those God foreknew.=LogoxideParallelVerse kjv:' 'health bibles 2' \
     'read logoxide://BSB/JHN logoxide' 'read next logoxide://BSB/ROM logoxide://BSB/JHN' \
     'read bible logoxide://KJV/JHN' 'read complete Romans KJV' \
     'move verses JHN:[16] JHN:[17] ROM:[28] JHN:[17] JHN:[16]' 'move chapters ROM:Roma JHN:John ROM:Roma' \

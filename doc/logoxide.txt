@@ -125,6 +125,11 @@ them (see `auto_build`). Binaries on your PATH work too.
     -- or chapter's first), or 'stop'
     navigation = { books = 'wrap', chapters = 'next', verses = 'next',
                    headings = 'next' },
+    -- The verse marked in |:LxParallel|'s other windows
+    -- (LogoxideParallelVerse, linked to |hl-CursorLine|): `highlight`, a
+    -- group to link to, or false for no mark; or `color`, a background
+    -- color ('#2a3340') or a highlight definition
+    parallel = { highlight = nil, color = nil },
     -- 'auto' (Telescope if installed), 'telescope', or 'quickfix'
     picker = 'auto',
   }
@@ -213,7 +218,12 @@ completed with <Tab> (`John 3:` lists every verse).
                         under the cursor, and keeps the two on the same verse
                         as either cursor moves, into another book too
                         (|:LxNextBook| in one opens the next book in both,
-                        when the other Bible has it). Takes a modifier for the
+                        when the other Bible has it). A cursor already in
+                        the verse stays where it is. The verse the cursor
+                        is on is marked in the other windows (just the
+                        verse, not its whole line; see `parallel`). From a
+                        window that is already parallel, a third Bible
+                        joins them. Takes a modifier for the
                         split (`:horizontal LxParallel KJV`; vertical by
                         default).
 

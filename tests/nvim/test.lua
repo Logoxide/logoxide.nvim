@@ -291,6 +291,23 @@ do
     local line = vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(kjv_win), cursor[1] - 1, cursor[1], false)[1]
     log("parallel column", line:sub(cursor[2] + 1, cursor[2] + 13))
   end
+  -- Going to the KJV doesn't move the BSB's cursor (it's in the verse already), and marks the
+  -- verse there (only the verse, not its whole line), not in the KJV
+  local before = vim.api.nvim_win_get_cursor(bsb_win)
+  vim.api.nvim_set_current_win(kjv_win)
+  vim.api.nvim_exec_autocmds("CursorMoved", {})
+  local ns = vim.api.nvim_get_namespaces().logoxide_parallel_verse
+  local function marked(win)
+    local bufnr = vim.api.nvim_win_get_buf(win)
+    local texts = {}
+    for _, m in ipairs(vim.api.nvim_buf_get_extmarks(bufnr, ns, 0, -1, { details = true })) do
+      local text = vim.api.nvim_buf_get_text(bufnr, m[2], m[3], m[4].end_row, m[4].end_col, {})
+      table.insert(texts, table.concat(text, "\n") .. "=" .. m[4].hl_group)
+    end
+    return table.concat(texts, "|")
+  end
+  vim.wait(3000, function() return marked(bsb_win) ~= "" end)
+  log("parallel stays", vim.deep_equal(before, vim.api.nvim_win_get_cursor(bsb_win)), marked(bsb_win), "kjv:" .. marked(kjv_win))
   vim.api.nvim_win_close(kjv_win, true)
   -- The next run (with Telescope) uses the same workspace
   os.remove(WORK .. "/ws/kjv.txt")

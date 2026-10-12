@@ -78,7 +78,9 @@ With [lazy.nvim](https://lazy.folke.io):
 - **Several Bibles**: with `bibles`, a reference followed by a Bible's name (`John 3:16 KJV`)
   uses that Bible for hover, go to definition, completion, insertions, and its own verse counts;
   `:LxBible KJV` changes the default, and `:LxParallel KJV` opens the same book in another
-  Bible next to the current one, kept on the same verse (and book, as either moves to another)
+  Bible next to the current one, kept on the same verse (and book, as either moves to another),
+  with the verse marked in the other window (`parallel = { highlight = 'Visual' }` or
+  `{ color = '#2a3340' }`; `CursorLine` by default)
 - **Installing Bibles** (logoxide packages, with `lx`): `:LxBibleSearch world english` searches
   the catalogs (eBible.org's and fetch.bible's translations) and installs the one you choose,
   `:LxBibleAdd https://...` adds a package from its git repository (or `ebible:<id>`,

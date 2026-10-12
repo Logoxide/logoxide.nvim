@@ -124,6 +124,12 @@ M.defaults = {
     -- 'stop'
     headings = 'next',
   },
+  -- :LxParallel's windows: the verse the cursor is on is marked in the others
+  -- (LogoxideParallelVerse, linked to CursorLine by default)
+  --   highlight  a highlight group to link to ('Visual'), or false to mark nothing
+  --   color      or a background color ('#2a3340'), or a highlight definition
+  --              ({ bg = '#2a3340', italic = true })
+  parallel = { highlight = nil, color = nil },
   -- 'telescope', 'quickfix', or 'auto' (Telescope if it is installed)
   picker = 'auto',
 }

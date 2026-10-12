@@ -59,6 +59,17 @@ function M.apply_highlights()
     end
     vim.api.nvim_set_hl(0, M.group(highlight[1]), spec)
   end
+  -- The verse marked in :LxParallel's other windows
+  local parallel = config.options.parallel or {}
+  local spec = { link = 'CursorLine', default = true }
+  if type(parallel.highlight) == 'string' then
+    spec = { link = parallel.highlight }
+  elseif type(parallel.color) == 'string' then
+    spec = { bg = parallel.color }
+  elseif type(parallel.color) == 'table' then
+    spec = parallel.color
+  end
+  vim.api.nvim_set_hl(0, 'LogoxideParallelVerse', spec)
 end
 
 -- The logoxide-lsp client to ask: the one in the buffer we came from, else any
