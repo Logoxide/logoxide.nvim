@@ -42,7 +42,7 @@ USX
 cat > "$WORK/Bibles/BSB/ROM.usx" <<'USX'
 <usx version="3.0"><book code="ROM" style="id">x</book>
 <chapter number="8" style="c" sid="ROM 8"/>
-<para style="p"><verse number="28" style="v" sid="ROM 8:28"/>And we know that God works all things together for good.<verse eid="ROM 8:28"/></para>
+<para style="p"><verse number="28" style="v" sid="ROM 8:28"/>And we know that God works all things together for good.<verse eid="ROM 8:28"/> <verse number="29" style="v" sid="ROM 8:29"/>For those God foreknew.<verse eid="ROM 8:29"/></para>
 <chapter eid="ROM 8"/></usx>
 USX
 # Another Bible, named KJV (alias AV) in `bibles`, with only John 3:16
@@ -58,7 +58,7 @@ USX
 cat > "$WORK/Bibles/KJV/ROM.usx" <<'USX'
 <usx version="3.0"><book code="ROM" style="id">x</book>
 <chapter number="8" style="c" sid="ROM 8"/>
-<para style="p"><verse number="28" style="v" sid="ROM 8:28"/>And we know that all things work together for good.<verse eid="ROM 8:28"/></para>
+<para style="p"><verse number="28" style="v" sid="ROM 8:28"/>And we know that all things work together for good.<verse eid="ROM 8:28"/> <verse number="29" style="v" sid="ROM 8:29"/>For whom he did foreknow.<verse eid="ROM 8:29"/></para>
 <chapter eid="ROM 8"/></usx>
 USX
 cat > "$WORK/Bibles/KJV/PSA.usx" <<'USX'
@@ -114,7 +114,7 @@ check() {
     'bibles BSB|KJV' 'named hover **John 3:16** (KJV) that he gave' 'default hover *BSB*' \
     'missing in KJV John 3:17 does not exist in the KJV' 'set default hover *KJV*' \
     'parallel logoxide://KJV/JHN [16] For God so loved the world, that he gave his only begotten Son.' \
-    'parallel follows John 3' 'parallel book logoxide://BSB/ROM logoxide://KJV/ROM' 'health bibles 2' \
+    'parallel follows John 3' 'parallel book logoxide://BSB/ROM logoxide://KJV/ROM' 'parallel column [29] For whom' 'health bibles 2' \
     'read logoxide://BSB/JHN logoxide' 'read next logoxide://BSB/ROM logoxide://BSB/JHN' \
     'read bible logoxide://KJV/JHN' 'read complete Romans KJV' \
     'move verses JHN:[16] JHN:[17] ROM:[28] JHN:[17] JHN:[16]' 'move chapters ROM:Roma JHN:John ROM:Roma' \

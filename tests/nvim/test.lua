@@ -279,6 +279,18 @@ do
   vim.cmd("LxNextBook")
   vim.wait(3000, function() return vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(kjv_win)) == "logoxide://KJV/ROM" end)
   log("parallel book", vim.api.nvim_buf_get_name(0), vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(kjv_win)))
+  -- A verse in the middle of a line: the KJV's cursor on its start, not the line's
+  for i, l in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
+    local col = l:find("[29]", 1, true)
+    if col then vim.api.nvim_win_set_cursor(bsb_win, { i, col + 1 }) end
+  end
+  vim.api.nvim_exec_autocmds("CursorMoved", {})
+  vim.wait(3000, function() return vim.api.nvim_win_get_cursor(kjv_win)[2] > 0 end)
+  do
+    local cursor = vim.api.nvim_win_get_cursor(kjv_win)
+    local line = vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(kjv_win), cursor[1] - 1, cursor[1], false)[1]
+    log("parallel column", line:sub(cursor[2] + 1, cursor[2] + 13))
+  end
   vim.api.nvim_win_close(kjv_win, true)
   -- The next run (with Telescope) uses the same workspace
   os.remove(WORK .. "/ws/kjv.txt")

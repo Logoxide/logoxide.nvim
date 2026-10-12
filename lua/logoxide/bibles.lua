@@ -100,7 +100,10 @@ local function follow(from, win, location)
       vim.cmd('edit ' .. vim.fn.fnameescape(location.uri))
     end
     local row = math.min(location.range.start.line + 1, vim.api.nvim_buf_line_count(0))
-    vim.fn.winrestview({ lnum = row, col = 0, topline = math.max(1, row - offset) })
+    -- The verse's own column, not its line's start (where the verse before it may end)
+    local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ''
+    local ok, col = pcall(vim.str_byteindex, line, 'utf-16', location.range.start.character, false)
+    vim.fn.winrestview({ lnum = row, col = ok and col or 0, topline = math.max(1, row - offset) })
   end)
   following[win] = nil
 end
