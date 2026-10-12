@@ -135,10 +135,13 @@ them (see `auto_build`). Binaries on your PATH work too.
     parallel = { highlight = nil, color = nil },
     -- 'auto' (Telescope if installed), 'telescope', or 'quickfix'
     picker = 'auto',
+    -- searches reuse the CLI's cache for unchanged files (`--cache`);
+    -- false never does, nil leaves it to the CLI's config.toml
+    cache = true,
   }
 <
-The CLI also reads ~/.config/topos/config.toml, so named queries (`-q`),
-custom data, and the cache work in the commands too.
+The CLI also reads ~/.config/topos/config.toml, so named queries (`-q`)
+and custom data work in the commands too.
 
 ==============================================================================
 2. COMMANDS                                             *logoxide-commands*

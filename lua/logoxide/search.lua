@@ -61,6 +61,16 @@ local function cli()
   return path
 end
 
+-- `topos -m json --sort`, with the cache as `cache` says
+local function command(path)
+  local cmd = { path, '-m', 'json', '--sort' }
+  local cache = config.options.cache
+  if cache ~= nil then
+    table.insert(cmd, cache and '--cache' or '--no-cache')
+  end
+  return cmd
+end
+
 -- One CLI match as a list item (filename, lnum, col, text) plus what the pickers show; a match
 -- in `--text` (no path) is in the buffer `bufnr`
 local function item(line, root, bufnr)
@@ -166,7 +176,7 @@ function M.run(args, title, opts)
     return
   end
   local root = opts.root or M.root()
-  local cmd = { path, '-m', 'json', '--sort' }
+  local cmd = command(path)
   vim.list_extend(cmd, args)
   if opts.bufnr then
     vim.list_extend(cmd, buffer_source(opts.bufnr))
@@ -259,7 +269,7 @@ function M.references(scope, passage)
       default_text = passage,
       debounce = 100,
       finder = require('telescope.finders').new_job(function(prompt)
-        local cmd = { path, '-m', 'json', '--sort' }
+        local cmd = command(path)
         vim.list_extend(cmd, M.filter(prompt))
         return vim.list_extend(cmd, source)
       end, function(line)

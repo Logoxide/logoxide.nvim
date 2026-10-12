@@ -139,6 +139,9 @@ M.defaults = {
   parallel = { highlight = nil, color = nil },
   -- 'telescope', 'quickfix', or 'auto' (Telescope if it is installed)
   picker = 'auto',
+  -- Whether searches reuse the topos CLI's cache for files that haven't changed (`--cache`);
+  -- false never does (`--no-cache`), and nil leaves it to ~/.config/topos/config.toml
+  cache = true,
 }
 
 M.options = vim.deepcopy(M.defaults)
