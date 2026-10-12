@@ -51,6 +51,10 @@ M.defaults = {
     -- Lines longer than this many characters break at a space, in whole books, hover, and
     -- insertions (nil: no limit; whole books still wrap at the window's width)
     width = nil,
+    -- Spaces before each line of poetry, by its USFM marker: a verse's first line (q1) at the
+    -- margin, the lines that continue it (q2, q3, ...) further in. Other markers can be added,
+    -- like qr (Selah), qm1, pi1 (indented paragraphs), or li1 (lists)
+    indent = { q1 = 0, q2 = 2, q3 = 4, q4 = 6 },
   },
   -- Completion offers the chapter or verse already typed, first (`Matthew 1` offers Matthew 1,
   -- then Matthew 10, ...), so its passage shows in the documentation. On by default
@@ -101,12 +105,12 @@ M.defaults = {
   source = nil,
   -- Build the binaries when setup can't find them (takes a few minutes the first time)
   auto_build = true,
-  -- Where :LxNextBook, :LxNextChapter, :LxNextVerse (and :LxPrev*) go past the end
-  -- (or start). They have no keys of their own; for example:
+  -- Where :LxNextBook, :LxNextChapter, :LxNextVerse, :LxNextHeading (and :LxPrev*) go past the
+  -- end (or start). They have no keys of their own; for example:
   --   vim.keymap.set('n', ']b', function() require('logoxide').next_book(vim.v.count1) end)
   --   vim.keymap.set('n', '[b', function() require('logoxide').prev_book(vim.v.count1) end)
   --   ]c / [c for chapters (next_chapter, prev_chapter), ]v / [v for verses (next_verse,
-  --   prev_verse)
+  --   prev_verse), ]h / [h for headings (next_heading, prev_heading)
   navigation = {
     -- 'wrap' (Revelation → Genesis) or 'stop'
     books = 'wrap',
@@ -116,6 +120,9 @@ M.defaults = {
     -- 'next' (the next chapter's first verse, as `chapters` says), 'wrap' (this chapter's
     -- first), or 'stop'
     verses = 'next',
+    -- 'next' (the next book's first heading, as `books` says), 'wrap' (this book's first), or
+    -- 'stop'
+    headings = 'next',
   },
   -- 'telescope', 'quickfix', or 'auto' (Telescope if it is installed)
   picker = 'auto',
@@ -144,6 +151,10 @@ end
 -- `insertions`, `complete_typed`, `epub`, `pdf`, `commentaries`, `stretch_notes`, and `strongs`, then `lsp.settings`, then the top-level `settings`
 function M.lsp_settings()
   local base = { markup = M.options.markup, insertions = M.options.insertions }
+  -- An empty table is a JSON array, which isn't `indent`'s map
+  if vim.tbl_isempty(M.options.markup.indent or {}) then
+    base.markup = vim.tbl_extend('force', M.options.markup, { indent = vim.empty_dict() })
+  end
   if M.options.bible then
     base.bible = vim.fn.expand(M.options.bible)
   end

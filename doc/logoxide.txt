@@ -78,6 +78,7 @@ them (see `auto_build`). Binaries on your PATH work too.
       divine_name = { show = true, display = '{text}' },
       quotes = { show = true, display = '{text}' },
       width = nil,
+      indent = { q1 = 0, q2 = 2, q3 = 4, q4 = 6 },
     },
     -- Code actions that insert a passage (see |logoxide-insertions|)
     insertions = {},
@@ -119,10 +120,11 @@ them (see `auto_build`). Binaries on your PATH work too.
     source = nil,
     auto_build = true,
     -- Past the end (or start), where |:LxNextBook| and the others go:
-    -- books 'wrap' (Revelation → Genesis) or 'stop'; chapters and verses
-    -- 'next' (into the next book or chapter), 'wrap' (this book's or
-    -- chapter's first), or 'stop'
-    navigation = { books = 'wrap', chapters = 'next', verses = 'next' },
+    -- books 'wrap' (Revelation → Genesis) or 'stop'; chapters, verses, and
+    -- headings 'next' (into the next book or chapter), 'wrap' (this book's
+    -- or chapter's first), or 'stop'
+    navigation = { books = 'wrap', chapters = 'next', verses = 'next',
+                   headings = 'next' },
     -- 'auto' (Telescope if installed), 'telescope', or 'quickfix'
     picker = 'auto',
   }
@@ -188,23 +190,30 @@ completed with <Tab> (`John 3:` lists every verse).
                                     *:LxNextBook* *:LxPrevBook*
                               *:LxNextChapter* *:LxPrevChapter*
                                   *:LxNextVerse* *:LxPrevVerse*
+                              *:LxNextHeading* *:LxPrevHeading*
 :[count]LxNextBook   In a whole book, go to the next book of its Bible
 :[count]LxPrevBook   (or the previous one), the next chapter (its label),
 :[count]LxNextChapter
 :[count]LxPrevChapter
-:[count]LxNextVerse  or the next verse (with a count, that many). Past the
-:[count]LxPrevVerse  end (or start), `navigation` says where: by default
-                        books wrap (Revelation → Genesis), chapters go on to
-                        the next book, and verses to the next chapter (and
-                        on to the next book). Each move is in the
-                        |jumplist|. For mappings: >lua
+:[count]LxNextVerse  the next verse, or the next heading (with a count,
+:[count]LxPrevVerse  that many). Headings on consecutive lines (a psalm's
+:[count]LxNextHeading
+:[count]LxPrevHeading
+                        book, range, and title) are one. Past the end (or
+                        start), `navigation` says where: by default books
+                        wrap (Revelation → Genesis), chapters and headings
+                        go on to the next book, and verses to the next
+                        chapter (and on to the next book). Each move is in
+                        the |jumplist|. For mappings: >lua
   vim.keymap.set('n', ']v', '<Cmd>LxNextVerse<CR>')
 <
                                                               *:LxParallel*
 :LxParallel [name]   In a whole book (`logoxide://BSB/JHN`), opens the
                         same book in another Bible in a split, at the verse
                         under the cursor, and keeps the two on the same verse
-                        as either cursor moves. Takes a modifier for the
+                        as either cursor moves, into another book too
+                        (|:LxNextBook| in one opens the next book in both,
+                        when the other Bible has it). Takes a modifier for the
                         split (`:horizontal LxParallel KJV`; vertical by
                         default).
 
@@ -245,7 +254,8 @@ the searches); the moving ones take a count (1 by default): >lua
   -- any_overlap, exact_overlap, inside, exclude_overlap
   logoxide.read(book, mods)                -- :LxRead ('John KJV', 'vertical')
   logoxide.next_book(count)                -- :LxNextBook, and prev_book,
-  -- next_chapter, prev_chapter, next_verse, prev_verse
+  -- next_chapter, prev_chapter, next_verse, prev_verse, next_heading,
+  -- prev_heading
   logoxide.bible(name)                     -- :LxBible
   logoxide.parallel(name, mods)            -- :LxParallel
   logoxide.bible_search(words)             -- :LxBibleSearch
@@ -265,6 +275,8 @@ The plugin maps no keys. For moving through a whole book, for example: >lua
   map('[c', logoxide.prev_chapter)
   map(']v', logoxide.next_verse)
   map('[v', logoxide.prev_verse)
+  map(']h', logoxide.next_heading)
+  map('[h', logoxide.prev_heading)
 <
 
 ==============================================================================
@@ -317,8 +329,9 @@ the Bible. Its files are left out of workspace searches. Then:
   declaration (|vim.lsp.buf.declaration()|) open the whole book at the passage, in a buffer named like `logoxide://BSB/JHN`. You
   can also open one with |:LxRead| or `:edit logoxide://BSB/JHN`. The
   buffer can't be changed (its 'filetype' is `logoxide`, and it wraps long
-  paragraphs). |:LxNextBook|, |:LxNextChapter|, |:LxNextVerse|, and
-  their `:LxPrev*` move by book, chapter, and verse (map them as
+  paragraphs). |:LxNextBook|, |:LxNextChapter|, |:LxNextVerse|,
+  |:LxNextHeading|, and their `:LxPrev*` move by book, chapter, verse, and
+  heading (map them as
   |logoxide-lua| shows). Its symbols
   (|gO|, or Telescope's `lsp_document_symbols`) are its chapters and verses.
 - In that buffer, go to references (|grr|) on a verse lists every reference
@@ -407,6 +420,17 @@ default) leaves lines whole, and a book buffer wraps them at the window's
 width. 'textwidth' doesn't do this: it only applies as you type or format
 (|gq|), and a book buffer can't be changed. >lua
   markup = { width = 80 }
+<
+Poetry is a line each, with a blank line between stanzas. `markup.indent`
+(a table of numbers) is how many spaces each kind of line starts with, by
+its USFM marker: by default a verse's first line (`q1`) at the margin and
+the lines that continue it two spaces further in each level (`q2`, `q3`,
+`q4`). The keys you set replace those, and other markers can be added:
+`qr` (Selah), `qm1`, `pi1` (indented paragraphs), `li1` (lists); an
+unnumbered `q` is `q1`, and an OSIS Bible's `<l level="2">` is `q2`. The
+first line of a hover's passage starts at the margin, and a line broken at
+`markup.width` goes on at the margin. >lua
+  markup = { indent = { q1 = 2, q2 = 6, qr = 10 } }
 <
 Without `color` or `highlight`, each links to a group of your colorscheme:
 

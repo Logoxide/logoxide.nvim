@@ -1,8 +1,8 @@
 --[[
 Reading a Bible directly: :LxRead John opens the whole book (`logoxide://BSB/JHN`), and
 :LxRead alone chooses a book, in Telescope with the book rendered and colored as its preview.
-In a whole book, :LxNextBook, :LxNextChapter, :LxNextVerse, and their :LxPrev* go to
-the next or previous one (each past the end as `navigation` says).
+In a whole book, :LxNextBook, :LxNextChapter, :LxNextVerse, :LxNextHeading, and their :LxPrev*
+go to the next or previous one (each past the end as `navigation` says).
 ]]
 local bin = require('logoxide.bin')
 local book = require('logoxide.book')
@@ -122,6 +122,26 @@ local function open(b, mods)
   vim.cmd((mods and mods ~= '' and (mods .. ' split ') or 'edit ') .. vim.fn.fnameescape(b.uri))
 end
 
+-- logoxide-lsp's semantic tokens in `lines`: { { row, from, to, type } }, each a 0-based row,
+-- byte columns, and the type's name (`heading`)
+local function decode(lines, tokens)
+  -- Each token is 5 numbers: line and start (relative to the last), length, type, modifiers
+  local decoded, line, start = {}, 0, 0
+  local data = tokens and tokens.data or {}
+  for i = 1, #data, 5 do
+    line = line + data[i]
+    start = (data[i] == 0 and start or 0) + data[i + 1]
+    local text = lines[line + 1] or ''
+    local ok_s, from = pcall(vim.str_byteindex, text, 'utf-16', start, false)
+    local ok_e, to = pcall(vim.str_byteindex, text, 'utf-16', start + data[i + 2], false)
+    local token = book.legend[data[i + 3] + 1]
+    if ok_s and ok_e and token then
+      table.insert(decoded, { line, from, to, token })
+    end
+  end
+  return decoded
+end
+
 -- A whole book's text and tokens, for previews: `done({ lines, highlights })`, from a cache
 local previews = {}
 
@@ -140,20 +160,9 @@ local function load_preview(uri, done)
     local lines = vim.split(result.text, '\n')
     local params = { textDocument = { uri = uri } }
     c:request('textDocument/semanticTokens/full', params, function(_, tokens)
-      -- Each token is 5 numbers: line and start (relative to the last), length, type, modifiers
-      local highlights, line, start = {}, 0, 0
-      local data = tokens and tokens.data or {}
-      for i = 1, #data, 5 do
-        line = line + data[i]
-        start = (data[i] == 0 and start or 0) + data[i + 1]
-        local text = lines[line + 1] or ''
-        local ok_s, from = pcall(vim.str_byteindex, text, 'utf-16', start, false)
-        local ok_e, to = pcall(vim.str_byteindex, text, 'utf-16', start + data[i + 2], false)
-        local token = book.legend[data[i + 3] + 1]
-        if ok_s and ok_e and token then
-          table.insert(highlights, { line, from, to, book.group(token) })
-        end
-      end
+      local highlights = vim.tbl_map(function(t)
+        return { t[1], t[2], t[3], book.group(t[4]) }
+      end, decode(lines, tokens))
       previews[uri] = { lines = lines, highlights = highlights }
       done(previews[uri])
     end)
@@ -414,6 +423,55 @@ function M.verse(step)
     end)
   end
   vim.notify(('logoxide: the %s verse of the chapter'):format(step > 0 and 'last' or 'first'))
+end
+
+--[[
+The headings of the whole book in the current buffer, from logoxide-lsp's semantic tokens:
+{ { row, col } }, 0-based; headings on consecutive lines (a psalm's book, its range, and its
+title, or a heading wrapped at `markup.width`) are one
+]]
+local function headings()
+  local c = client()
+  local uri = vim.api.nvim_buf_get_name(0)
+  local response = c and c:request_sync('textDocument/semanticTokens/full', { textDocument = { uri = uri } }, 5000, 0)
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local list, last = {}, nil
+  for _, t in ipairs(decode(lines, response and response.result)) do
+    if t[4] == 'heading' then
+      if not last or t[1] > last + 1 then
+        table.insert(list, { t[1], t[2] })
+      end
+      last = t[1]
+    end
+  end
+  return list
+end
+
+--[[
+In a whole book, the heading `step` headings away; past the book's last (or before its first),
+`navigation.headings` says where: 'next' for the next book's first heading (the previous book's
+last, crossing books as `navigation.books` says; its start if it has none), 'wrap' for this
+book's first (last), or 'stop'
+]]
+function M.heading(step)
+  if not book_of(0) then
+    return not_a_book()
+  end
+  local list = headings()
+  local target = index_at(list) + step
+  if target >= 1 and target <= #list then
+    return jump(list[target])
+  end
+  local past = config.options.navigation.headings
+  if past == 'wrap' and #list > 0 then
+    return jump(list[(target - 1) % #list + 1])
+  elseif past == 'next' then
+    return M.book(step > 0 and 1 or -1, function()
+      local others = headings()
+      jump(others[step > 0 and 1 or #others] or { 0, 0 })
+    end)
+  end
+  vim.notify(('logoxide: the %s heading of the book'):format(step > 0 and 'last' or 'first'))
 end
 
 -- Completes book names (the default Bible's), then Bible names after one; only the last word

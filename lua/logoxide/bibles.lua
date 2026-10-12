@@ -84,36 +84,46 @@ local function same_verse(win, bible, done)
   end, bufnr)
 end
 
--- Moves `win` to `location`, at the same screen row as the cursor in `from`
+-- Windows `follow` is moving, whose moves aren't followed back
+local following = {}
+
+-- Moves `win` to `location` (opening its book there, when `from` went to another book), at the
+-- same screen row as the cursor in `from`
 local function follow(from, win, location)
   if not (location and vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_is_valid(from)) then
     return
   end
-  local row = location.range.start.line + 1
-  local lines = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(win))
-  row = math.min(row, lines)
   local offset = vim.api.nvim_win_get_cursor(from)[1] - vim.fn.line('w0', from)
-  vim.api.nvim_win_call(win, function()
+  following[win] = true
+  pcall(vim.api.nvim_win_call, win, function()
+    if vim.api.nvim_buf_get_name(0) ~= location.uri then
+      vim.cmd('edit ' .. vim.fn.fnameescape(location.uri))
+    end
+    local row = math.min(location.range.start.line + 1, vim.api.nvim_buf_line_count(0))
     vim.fn.winrestview({ lnum = row, col = 0, topline = math.max(1, row - offset) })
   end)
+  following[win] = nil
 end
 
--- Keeps each window of a pair on the verse the other's cursor is on, until one closes
+-- Keeps each window of a pair on the verse (and book) the other's cursor is on, until one closes
 local function link(a, b)
   local group = vim.api.nvim_create_augroup(('logoxide_parallel_%d_%d'):format(a, b), { clear = true })
   local function sync(from, to)
     local bible = bible_of(vim.api.nvim_win_get_buf(to))
-    if bible then
+    if bible and bible_of(vim.api.nvim_win_get_buf(from)) then
       same_verse(from, bible, function(location)
         follow(from, to, location)
       end)
     end
   end
-  vim.api.nvim_create_autocmd('CursorMoved', {
+  -- And when either goes to another book (:LxNextBook), the other goes too
+  vim.api.nvim_create_autocmd({ 'CursorMoved', 'BufWinEnter' }, {
     group = group,
     callback = function()
       local win = vim.api.nvim_get_current_win()
-      if win == a then
+      if following[win] then
+        return
+      elseif win == a then
         sync(a, b)
       elseif win == b then
         sync(b, a)
@@ -132,7 +142,7 @@ local function link(a, b)
 end
 
 -- :LxParallel [name]: this whole book in another Bible, in a split at the same verse, and
--- both kept on the same verse as either's cursor moves
+-- both kept on the same verse as either's cursor moves (to another book too)
 function M.parallel(name, mods)
   local win = vim.api.nvim_get_current_win()
   local current = bible_of(vim.api.nvim_win_get_buf(win))

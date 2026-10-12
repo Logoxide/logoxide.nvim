@@ -53,6 +53,23 @@ cat > "$WORK/Bibles/KJV/JHN.usx" <<'USX'
 <para style="p"><verse number="16" style="v" sid="JHN 3:16"/>For God so loved the world, that he gave his only begotten Son.<verse eid="JHN 3:16"/></para>
 <chapter eid="JHN 3"/></usx>
 USX
+# The KJV's Romans 8:28 (for :LxParallel across books), and a psalm's poetry: two lines of a
+# verse, a stanza break, and the next verse
+cat > "$WORK/Bibles/KJV/ROM.usx" <<'USX'
+<usx version="3.0"><book code="ROM" style="id">x</book>
+<chapter number="8" style="c" sid="ROM 8"/>
+<para style="p"><verse number="28" style="v" sid="ROM 8:28"/>And we know that all things work together for good.<verse eid="ROM 8:28"/></para>
+<chapter eid="ROM 8"/></usx>
+USX
+cat > "$WORK/Bibles/KJV/PSA.usx" <<'USX'
+<usx version="3.0"><book code="PSA" style="id">x</book>
+<chapter number="1" style="c" sid="PSA 1"/>
+<para style="q1"><verse number="1" style="v" sid="PSA 1:1"/>Blessed is the man</para>
+<para style="q2">that walketh not.<verse eid="PSA 1:1"/></para>
+<para style="b"/>
+<para style="q1"><verse number="2" style="v" sid="PSA 1:2"/>But his delight</para>
+<chapter eid="PSA 1"/></usx>
+USX
 
 expected='lsp logoxide hints true
 diagnostic HINT reference John 3:16
@@ -97,11 +114,13 @@ check() {
     'bibles BSB|KJV' 'named hover **John 3:16** (KJV) that he gave' 'default hover *BSB*' \
     'missing in KJV John 3:17 does not exist in the KJV' 'set default hover *KJV*' \
     'parallel logoxide://KJV/JHN [16] For God so loved the world, that he gave his only begotten Son.' \
-    'parallel follows John 3' 'health bibles 2' \
+    'parallel follows John 3' 'parallel book logoxide://BSB/ROM logoxide://KJV/ROM' 'health bibles 2' \
     'read logoxide://BSB/JHN logoxide' 'read next logoxide://BSB/ROM logoxide://BSB/JHN' \
     'read bible logoxide://KJV/JHN' 'read complete Romans KJV' \
     'move verses JHN:[16] JHN:[17] ROM:[28] JHN:[17] JHN:[16]' 'move chapters ROM:Roma JHN:John ROM:Roma' \
     'move books JHN:John ROM:Roma JHN:John' 'move wrap JHN:John JHN:[16] JHN:[17] JHN:[16]' \
+    'move headings JHN:Jesu ROM:Roma JHN:Jesu' 'poetry [1] Blessed is the man|  that walketh not.||[2] But his delight' \
+    'poetry indent  [1] Blessed is the man|     that walketh not.' \
     'read starts lsp 1 logoxide://BSB/ROM true' \
     'unnamed before 0' 'unnamed after 1 John 3:16' 'unnamed reformat Read John 3:16 today' 'unnamed edited Romans 8:28' 'restarted 1 true true true' \
     'book off true' 'book file logoxide-file true Rom 8:28 Gill' \

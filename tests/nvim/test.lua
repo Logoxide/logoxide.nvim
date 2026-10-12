@@ -275,6 +275,10 @@ do
   end)
   local at = vim.api.nvim_win_get_cursor(kjv_win)[1]
   log("parallel follows", vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(kjv_win), at - 1, at, false)[1])
+  -- The next book in the BSB is the next book in the KJV too
+  vim.cmd("LxNextBook")
+  vim.wait(3000, function() return vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(kjv_win)) == "logoxide://KJV/ROM" end)
+  log("parallel book", vim.api.nvim_buf_get_name(0), vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(kjv_win)))
   vim.api.nvim_win_close(kjv_win, true)
   -- The next run (with Telescope) uses the same workspace
   os.remove(WORK .. "/ws/kjv.txt")
@@ -314,6 +318,29 @@ do
   vim.api.nvim_win_set_cursor(0, { 1, 0 })
   log("move wrap", moves("LxPrevBook", "LxNextVerse", "LxNextVerse", "LxNextVerse"))
   navigation.books, navigation.verses = "wrap", "next"
+  -- Headings: John's title, then its section heading; Romans (none) at its start; back to John's
+  vim.cmd("LxRead John BSB")
+  vim.api.nvim_win_set_cursor(0, { 1, 0 })
+  log("move headings", moves("LxNextHeading", "LxNextHeading", "LxPrevHeading"))
+  -- Poetry: a line each, `q2` indented, and a blank line between stanzas; then `markup.indent`
+  vim.cmd("edit logoxide://KJV/PSA")
+  log("poetry", table.concat(vim.api.nvim_buf_get_lines(0, 1, 5, false), "|"))
+  local markup = require("logoxide.config").options.markup
+  local function indent(spaces)
+    markup.indent = spaces
+    local settings = { logoxide = require("logoxide.config").lsp_settings() }
+    for _, c in ipairs(vim.lsp.get_clients({ name = "logoxide" })) do
+      c.settings = settings
+      c:notify("workspace/didChangeConfiguration", { settings = settings })
+    end
+    vim.wait(500)
+  end
+  indent({ q1 = 1, q2 = 5 })
+  vim.cmd("bwipeout")
+  vim.cmd("edit logoxide://KJV/PSA")
+  log("poetry indent", table.concat(vim.api.nvim_buf_get_lines(0, 1, 3, false), "|"))
+  indent({ q1 = 0, q2 = 2, q3 = 4, q4 = 6 })
+  vim.cmd("LxRead John BSB")
   if telescope then
     vim.o.columns, vim.o.lines = 200, 50 -- wide enough for Telescope's previewer
     vim.cmd("LxRead")

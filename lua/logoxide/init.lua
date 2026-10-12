@@ -245,8 +245,8 @@ function M.read(book, mods)
   require('logoxide.read').read(book, mods)
 end
 
--- :LxNextBook, :LxPrevChapter, ... (count: how many; 1 by default)
-for _, unit in ipairs({ 'book', 'chapter', 'verse' }) do
+-- :LxNextBook, :LxPrevChapter, :LxNextHeading, ... (count: how many; 1 by default)
+for _, unit in ipairs({ 'book', 'chapter', 'verse', 'heading' }) do
   M['next_' .. unit] = function(count)
     require('logoxide.read')[unit](count or 1)
   end

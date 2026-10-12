@@ -167,7 +167,7 @@ for name, kind in pairs(passages) do
 end
 
 -- :LxNextBook, :LxPrevVerse, ... in a whole book (with a count, that many)
-for _, unit in ipairs({ 'book', 'chapter', 'verse' }) do
+for _, unit in ipairs({ 'book', 'chapter', 'verse', 'heading' }) do
   for direction, word in pairs({ next = 'Next', prev = 'Prev' }) do
     commands['Lx' .. word .. unit:gsub('^%l', string.upper)] = {
       function(opts)

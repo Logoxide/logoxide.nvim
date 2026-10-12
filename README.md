@@ -18,7 +18,8 @@ With [lazy.nvim](https://lazy.folke.io):
           'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxBuild', 'LxLspStart',
           'LxBible', 'LxParallel', 'LxRead', 'LxBibleAdd', 'LxBibleSearch',
           'LxBibleRemove', 'LxNextBook', 'LxPrevBook', 'LxNextChapter',
-          'LxPrevChapter', 'LxNextVerse', 'LxPrevVerse' },
+          'LxPrevChapter', 'LxNextVerse', 'LxPrevVerse', 'LxNextHeading',
+          'LxPrevHeading' },
   opts = {
     -- A folder of USX files, one book each (JHN.usx): hover shows the text, and go to
     -- definition opens the whole book
@@ -33,6 +34,7 @@ With [lazy.nvim](https://lazy.folke.io):
       headings = { display = '## {text}', highlight = 'Title' }, -- a group instead of a color
       notes = { show = true, display = '({text})', highlight = 'Comment' },
       width = 80, -- break lines at 80 characters
+      indent = { q1 = 0, q2 = 2 }, -- spaces before each line of poetry, by USFM marker
     },
     -- Code actions that insert a passage below a reference ("Insert Callout")
     insertions = {
@@ -69,13 +71,14 @@ With [lazy.nvim](https://lazy.folke.io):
 - **Reading**: `:LxRead John` opens a whole book (`1 cor` and `JHN` work too, and
   `:LxRead John KJV` another Bible's), and `:LxRead` alone chooses one in Telescope,
   previewing each book colored as it reads. In a book, `:LxNextBook`, `:LxNextChapter`,
-  `:LxNextVerse` (and `:LxPrev*`) move through the Bible; `navigation` says what happens
-  past the end (by default books wrap, chapters go on to the next book, and verses to the next
-  chapter). The plugin maps no keys; see below for some
+  `:LxNextVerse`, `:LxNextHeading` (and `:LxPrev*`) move through the Bible; `navigation` says
+  what happens past the end (by default books wrap, chapters and headings go on to the next book,
+  and verses to the next chapter). Poetry is a line each, indented by `markup.indent`. The plugin
+  maps no keys; see below for some
 - **Several Bibles**: with `bibles`, a reference followed by a Bible's name (`John 3:16 KJV`)
   uses that Bible for hover, go to definition, completion, insertions, and its own verse counts;
   `:LxBible KJV` changes the default, and `:LxParallel KJV` opens the same book in another
-  Bible next to the current one, kept on the same verse
+  Bible next to the current one, kept on the same verse (and book, as either moves to another)
 - **Installing Bibles** (logoxide packages, with `lx`): `:LxBibleSearch world english` searches
   the catalogs (eBible.org's and fetch.bible's translations) and installs the one you choose,
   `:LxBibleAdd https://...` adds a package from its git repository (or `ebible:<id>`,
@@ -99,6 +102,7 @@ for lhs, move in pairs({
   [']b'] = logoxide.next_book, ['[b'] = logoxide.prev_book,
   [']c'] = logoxide.next_chapter, ['[c'] = logoxide.prev_chapter,
   [']v'] = logoxide.next_verse, ['[v'] = logoxide.prev_verse,
+  [']h'] = logoxide.next_heading, ['[h'] = logoxide.prev_heading,
 }) do
   vim.keymap.set('n', lhs, function() move(vim.v.count1) end)
 end
