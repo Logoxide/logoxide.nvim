@@ -16,10 +16,11 @@ With [lazy.nvim](https://lazy.folke.io):
   ft = { 'markdown', 'text' },
   cmd = { 'LxSearch', 'LxQuery', 'LxExplicitOverlap', 'LxAnyOverlap',
           'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxFileReferences',
-          'LxDirReferences', 'LxBuild', 'LxLspStart', 'LxBible', 'LxParallel',
-          'LxRead', 'LxBibleAdd', 'LxBibleSearch', 'LxBibleRemove', 'LxNextBook',
-          'LxPrevBook', 'LxNextChapter', 'LxPrevChapter', 'LxNextVerse',
-          'LxPrevVerse', 'LxNextHeading', 'LxPrevHeading' },
+          'LxDirReferences', 'LxCopy', 'LxInsert', 'LxBuild', 'LxLspStart',
+          'LxBible', 'LxParallel', 'LxRead', 'LxBibleAdd', 'LxBibleSearch',
+          'LxBibleRemove', 'LxNextBook', 'LxPrevBook', 'LxNextChapter',
+          'LxPrevChapter', 'LxNextVerse', 'LxPrevVerse', 'LxNextHeading',
+          'LxPrevHeading' },
   opts = {
     -- A folder of USX files, one book each (JHN.usx): hover shows the text, and go to
     -- definition opens the whole book
@@ -36,18 +37,22 @@ With [lazy.nvim](https://lazy.folke.io):
       width = 80, -- break lines at 80 characters
       indent = { q1 = 0, q2 = 2 }, -- spaces before each line of poetry, by USFM marker
     },
-    -- Code actions that insert a passage below a reference ("Insert Callout")
-    insertions = {
-      { name = 'Callout', display = '> [!bible] {reference}\n{text}', line_prefix = '> ' },
-      -- replace = 'line' (the reference's line), 'inline' (just the reference), or nil (below)
-      { name = 'Quote', replace = 'inline', display = '“{text}” ({reference})' },
+    -- Named templates: code actions ("Insert callout"), :LxCopy's forms, and inlay hints
+    templates = {
+      -- action = 'insert' (below), 'replace-line', 'replace' (just the reference), or nil (none)
+      callout = { display = '> [!bible] {reference}\n{text}', line_prefix = '> ', action = 'insert' },
+      quote = { display = '“{text}” ({reference})', action = 'replace' },
+      -- The first verse, without its heading: for ['reference-diagnostics-template'] = 'verse
+      verse = { display = '{first:1}', markup = { headings = { show = false } } },
     },
     -- logoxide-lsp's settings: the CLI's config.toml keys, which these override
     settings = {
       format = 'name',                        -- or 'abbreviation' for Jn 3:16
       ['psg-fmt'] = { join_adjacent = true }, -- 3:16-18, not 3:16,17,18
       ['reference-diagnostics'] = 'hint',     -- 'info' (default), 'hint', or 'never'
-      ['inlay-hints'] = 'never',              -- 'changed' (default), 'always', 'osis', 'never'
+      ['reference-diagnostics-template'] = 'verse', -- their text (the reference by default)
+      ['inlay-hints'] = 'never',              -- 'changed' (default), 'always', 'osis', 'never',
+                                              -- a template's name ('verse'), or a template
       ext = 'md,txt',                         -- what references and searches cover
     },
   },
@@ -76,7 +81,7 @@ With [lazy.nvim](https://lazy.folke.io):
   and verses to the next chapter). Poetry is a line each, indented by `markup.indent`. The plugin
   maps no keys; see below for some
 - **Several Bibles**: with `bibles`, a reference followed by a Bible's name (`John 3:16 KJV`)
-  uses that Bible for hover, go to definition, completion, insertions, and its own verse counts;
+  uses that Bible for hover, go to definition, completion, templates, and its own verse counts;
   `:LxBible KJV` changes the default, and `:LxParallel KJV` opens the same book in another
   Bible next to the current one, kept on the same verse (and book, as either moves to another),
   with the verse marked in the other window (`parallel = { highlight = 'Visual' }` or
@@ -86,8 +91,12 @@ With [lazy.nvim](https://lazy.folke.io):
   `:LxBibleAdd https://...` adds a package from its git repository (or `ebible:<id>`,
   `fetch:<id>`), and `:LxBibleRemove id` removes one. They use the current folder's
   `logoxide.toml` (else the library's own), like logoxide-lsp, which restarts to read them
-- **Insertions**: code actions that write a passage below its reference (like an Obsidian
-  callout), in place of its line, or in place of the reference
+- **Templates**: named forms of a passage (`{text}`, `{first:2}`, `{last:1}`, `{reference}`,
+  ...), each with its own markup: code actions that write it below its reference (like an
+  Obsidian callout), in place of its line, or in place of the reference; `:LxCopy` copies the
+  passage under the cursor in one and `:LxInsert` writes it, choosing in Telescope with a
+  preview; and diagnostics and inlay hints can name one
+  (`['reference-diagnostics-template'] = 'verse'`)
 - **Commands**: `:LxSearch` (every reference), `:LxQuery -g Wisdom` (the CLI's options,
   completed with Tab), and `:LxExplicitOverlap John 3:16`, `:LxAnyOverlap`,
   `:LxExactOverlap`, `:LxInside`, `:LxExcludeOverlap` (the reference under the cursor

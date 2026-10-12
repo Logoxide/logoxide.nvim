@@ -4,7 +4,10 @@ local M = {}
 M.defaults = {
   -- logoxide-lsp's settings, overriding ~/.config/topos/config.toml (the CLI's keys), like
   -- { format = 'abbreviation', ['psg-fmt'] = { join_adjacent = true },
-  --   ['inlay-hints'] = 'never', ['reference-diagnostics'] = 'hint', ext = 'md,txt',
+  --   ['inlay-hints'] = 'never' (or a template, like '{first:1}'),
+  --   ['reference-diagnostics'] = 'hint',
+  --   ['reference-diagnostics-template'] = 'verse' (a template's name, or a template),
+  --   ext = 'md,txt',
   --   hover = { 'osis', 'book', 'genres', 'verses' } }
   settings = {},
   -- A folder of USX files (one book each, like JHN.usx, as Paratext, the Digital Bible Library,
@@ -53,7 +56,7 @@ M.defaults = {
     -- Quotations other than words of Jesus
     quotes = { show = true, display = '{text}' },
     -- Lines longer than this many characters break at a space, in whole books, hover, and
-    -- insertions (nil: no limit; whole books still wrap at the window's width)
+    -- templates (nil: no limit; whole books still wrap at the window's width)
     width = nil,
     -- Spaces before each line of poetry, by its USFM marker: a verse's first line (q1) at the
     -- margin, the lines that continue it (q2, q3, ...) further in. Other markers can be added,
@@ -81,19 +84,24 @@ M.defaults = {
   -- Hovering a Strong's number (G25, H430, G0025) shows its entry in the project's Strong's
   -- dictionaries (lexicons with keys = "strongs-greek" or "strongs-hebrew"). Off by default
   strongs = false,
-  -- Ways to insert a passage's text below a reference, each a code action ("Insert Callout"):
-  --   name         the action is "Insert {name}"
-  --   display      what is inserted: {text} (the passage), {reference} (John 3:16), {osis}
-  --                (John.3.16), {bible} (the Bible's name), {translation} (its name unless it's
+  -- Named templates for a reference: code actions that write a passage's text, the forms
+  -- :LxCopy and :LxInsert offer, and what settings['reference-diagnostics-template'] and
+  -- ['inlay-hints'] can name
+  --   display      what it writes: {text} (the passage), {first:N} and {last:N} (its first or
+  --                last N verses), {reference} (John 3:16), {osis} (John.3.16), {usfm}
+  --                (JHN 3:16), {bible} (the Bible's name), {translation} (its name unless it's
   --                the default Bible and the reference names none; then nothing, with the
   --                brackets around it, so '{reference} ({translation})' is 'John 3:16');
   --                default '{text}'
-  --   line_prefix  written before each line of {text}, like '> '
-  --   markup       `markup` for this insertion, over the one above (same keys; no colors)
-  --   replace      what it replaces: 'line' (the reference's whole line), 'inline' (just the
-  --                reference, keeping the rest of its line), or nil (insert on the lines below)
-  -- like { name = 'Callout', display = '> [!bible] {reference}\n{text}', line_prefix = '> ' }
-  insertions = {},
+  --   line_prefix  written before each line of the text, like '> '
+  --   markup       `markup` for this template, over the one above (same keys; no colors)
+  --   action       its code action: 'insert' (on the lines below: "Insert callout"),
+  --                'replace-line' (the reference's whole line), 'replace' (just the
+  --                reference, keeping the rest of its line), or nil (none: for :LxCopy,
+  --                diagnostics, and inlay hints)
+  -- like { callout = { display = '> [!bible] {reference}\n{text}', line_prefix = '> ',
+  --   action = 'insert' }, verse = { display = '{first:1}', markup = { headings = { show = false } } } }
+  templates = {},
   lsp = {
     enabled = true,
     filetypes = { 'markdown', 'text' },
@@ -164,9 +172,15 @@ local function expanded_bibles()
 end
 
 -- The language server's settings: `bible`, `bibles`, `default_bible`, `hover_bibles`, `hover`, `markup`,
--- `insertions`, `complete_typed`, `epub`, `pdf`, `commentaries`, `stretch_notes`, and `strongs`, then `lsp.settings`, then the top-level `settings`
+-- `templates`, `complete_typed`, `epub`, `pdf`, `commentaries`, `stretch_notes`, and `strongs`, then `lsp.settings`, then the top-level `settings`
 function M.lsp_settings()
-  local base = { markup = M.options.markup, insertions = M.options.insertions }
+  local base = { markup = M.options.markup }
+  -- A table of names (an empty one would be a JSON array)
+  if next(M.options.templates or {}) then
+    base.templates = M.options.templates
+  end
+  -- The old option, which the server explains
+  base.insertions = M.options.insertions
   -- An empty table is a JSON array, which isn't `indent`'s map
   if vim.tbl_isempty(M.options.markup.indent or {}) then
     base.markup = vim.tbl_extend('force', M.options.markup, { indent = vim.empty_dict() })

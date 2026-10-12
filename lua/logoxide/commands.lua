@@ -100,6 +100,18 @@ local commands = {
       desc = 'The references under the current directory, narrowed by a passage as you type it (in Telescope)',
     },
   },
+  LxCopy = {
+    function(opts)
+      api().copy(opts.reg)
+    end,
+    { register = true, desc = 'Copy the passage under the cursor, in the form chosen (the templates)' },
+  },
+  LxInsert = {
+    function()
+      api().insert()
+    end,
+    { desc = 'Write the passage under the cursor with the template chosen, as its code action does' },
+  },
   LxLspStart = {
     function()
       api().lsp_start()

@@ -1,7 +1,8 @@
 -- Telescope pickers for topos: `:Telescope logoxide` (every reference), `:Telescope logoxide query
 -- args=...`, and one per search kind, like `:Telescope logoxide explicit_overlap passage=John\ 3:16`
 -- (the reference under the cursor if no passage is given), and `file_references` and
--- `dir_references`, whose prompt is a passage that narrows the references as you type
+-- `dir_references`, whose prompt is a passage that narrows the references as you type, and
+-- `copy` and `insert` (the passage under the cursor, in a form chosen from the templates)
 local search = require('logoxide.search')
 
 local exports = {
@@ -18,6 +19,12 @@ exports.file_references = function(opts)
 end
 exports.dir_references = function(opts)
   search.references('directory', opts and opts.passage)
+end
+exports.copy = function(opts)
+  require('logoxide.insert').copy(opts and opts.register)
+end
+exports.insert = function()
+  require('logoxide.insert').insert()
 end
 for kind in pairs(search.kinds) do
   exports[kind] = function(opts)

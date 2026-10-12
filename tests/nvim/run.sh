@@ -126,7 +126,9 @@ check() {
     'unnamed before 0' 'unnamed after 1 John 3:16' 'unnamed reformat Read John 3:16 today' 'unnamed edited Romans 8:28' 'restarted 1 true true true' \
     'book off true' 'book file logoxide-file true Rom 8:28 Gill' \
     'complete typed Matthew 1 Matthew 10' 'hover trim "" "Jesus and …"' \
-    'file references 4 1 3 2 1' 'dir references 5 1'; do
+    'file references 4 1 3 2 1' 'dir references 5 1' \
+    'copy 4 V > [!bible] John 3:16|> Jesus and Nicodemus|> [16] For God so loved the world.' \
+    'insert 2 3 > [!bible] John 3:16' 'verse hint [16] For God so loved the world.'; do
     if ! grep -qxF "$line" <<<"$output"; then
       echo "FAIL ($name): expected '$line'"
       grep -E '^(unnamed|restarted|ERROR)' <<<"$output" || true

@@ -26,7 +26,7 @@ With lazy.nvim: >lua
     ft = { 'markdown', 'text' },
     cmd = { 'LxSearch', 'LxQuery', 'LxExplicitOverlap', 'LxAnyOverlap',
             'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxFileReferences',
-            'LxDirReferences', 'LxBuild', 'LxLspStart',
+            'LxDirReferences', 'LxCopy', 'LxInsert', 'LxBuild', 'LxLspStart',
             'LxRead', 'LxBibleAdd', 'LxBibleSearch', 'LxBibleRemove' },
     opts = {
       bible = '~/Bibles/BSB',
@@ -46,8 +46,12 @@ them (see `auto_build`). Binaries on your PATH work too.
     -- logoxide-lsp's settings, overriding ~/.config/topos/config.toml (the
     -- CLI's keys), like { format = 'abbreviation',
     --   ['psg-fmt'] = { join_adjacent = true }, ext = 'md,txt',
-    --   ['inlay-hints'] = 'changed' | 'always' | 'osis' | 'never',
+    --   ['inlay-hints'] = 'changed' | 'always' | 'osis' | 'usfm' | 'never'
+    --     | a template's name, or a template like '{first:1}'
+    --       (see |logoxide-templates|),
     --   ['reference-diagnostics'] = 'info' | 'hint' | 'never',
+    --   ['reference-diagnostics-template'] = their text: a template's
+    --     name, or a template (the reference by default),
     --   hover = { 'text', 'name', 'abbreviation', 'osis', 'book',
     --             'testament', 'genres', 'verses', 'location', 'written',
     --             'bcv', 'translation' } }
@@ -83,8 +87,9 @@ them (see `auto_build`). Binaries on your PATH work too.
       width = nil,
       indent = { q1 = 0, q2 = 2, q3 = 4, q4 = 6 },
     },
-    -- Code actions that insert a passage (see |logoxide-insertions|)
-    insertions = {},
+    -- Named templates: code actions, :LxCopy's forms, and inlay hints
+    -- (see |logoxide-templates|)
+    templates = {},
     -- Completion offers the chapter or verse already typed, first
     -- (`Matthew 1` offers Matthew 1, then Matthew 10, ...), so its text
     -- shows in the documentation
@@ -148,6 +153,19 @@ and custom data work in the commands too.
 
 Results open in Telescope, or the quickfix list without it. Searches cover
 the language server's workspace folder (or a root marker, or the cwd).
+
+                                                                  *:LxCopy*
+:LxCopy [x]          Copies the reference under the cursor's passage into a
+                        register (the unnamed one by default), in the form
+                        chosen from |logoxide-templates| (Telescope previews
+                        each; just the passage's text without any).
+                                                                *:LxInsert*
+:LxInsert            Writes it with the template chosen (those with an
+                        `action`), like its code action.
+
+`settings['reference-diagnostics-template']` and `settings['inlay-hints']`
+can name a template too (with its markup), or be one, shown on one line for
+each reference: `'{first:1}'` is the passage's first verse.
 
                                                                 *:LxSearch*
 :LxSearch [paths]    Every reference in the workspace (or the paths).
@@ -281,6 +299,8 @@ the searches); the moving ones take a count (1 by default): >lua
   logoxide.query('-g Wisdom')              -- :LxQuery
   logoxide.explicit_overlap(passage)       -- :LxExplicitOverlap, and
   -- any_overlap, exact_overlap, inside, exclude_overlap
+  logoxide.copy(register)                  -- :LxCopy
+  logoxide.insert()                        -- :LxInsert
   logoxide.file_references(passage)        -- :LxFileReferences
   logoxide.dir_references(passage)         -- :LxDirReferences
   logoxide.read(book, mods)                -- :LxRead ('John KJV', 'vertical')
@@ -321,8 +341,8 @@ The plugin maps no keys. For moving through a whole book, for example: >lua
   :Telescope logoxide file_references passage=mat\ 1
 <
 The pickers are `search`, `query`, `explicit_overlap`, `any_overlap`,
-`exact_overlap`, `inside`, `exclude_overlap`, and `file_references` and
-`dir_references` (|:LxFileReferences|). From Lua: >lua
+`exact_overlap`, `inside`, `exclude_overlap`, `file_references` and
+`dir_references` (|:LxFileReferences|), and `copy` and `insert` (|:LxCopy|). From Lua: >lua
   require('telescope').extensions.logoxide.exact_overlap({ passage = 'Rom 8:28' })
 <
 ==============================================================================
@@ -416,7 +436,7 @@ verse numbers.
 
                                                           *logoxide-markup*
 `markup` says how Bible text is written and colored, in whole books, hover,
-completion documentation, and insertions. It has one table per element:
+completion documentation, and templates. It has one table per element:
 
   Key               What it is                                Shown by default
   verse_numbers     a verse's number, a label                 yes
@@ -459,7 +479,7 @@ For example: >lua
   }
 <
 `markup.width` (a number, not a table) breaks lines longer than that many
-characters at a space, in whole books, hover, and insertions; nil (the
+characters at a space, in whole books, hover, and templates; nil (the
 default) leaves lines whole, and a book buffer wraps them at the window's
 width. 'textwidth' doesn't do this: it only applies as you type or format
 (|gq|), and a book buffer can't be changed. >lua
@@ -507,41 +527,54 @@ Other items are drawn as usual.
 `markup` can also go in ~/.config/topos/config.toml (as `[markup]`, without
 colors), where the server reads it like the other settings.
 
-                                                      *logoxide-insertions*
-`insertions` are ways to insert a passage's text at a reference, each a code
-action (|gra|) named "Insert {name}". Each takes:
+                                                       *logoxide-templates*
+`templates` are named forms of a passage, by name: >lua
+  templates = { callout = { ... }, verse = { ... } }
+<
+One with an `action` is a code action (|gra|), like "Insert callout"; any is
+a form |:LxCopy| offers, and `settings['reference-diagnostics-template']` and
+`settings['inlay-hints']` can name one. Each
+takes:
 
-  name          The action's name.
-  display       What is inserted: `{text}`
-                (the passage), `{reference}` (as formatted, `John 3:16`),
-                `{osis}` (`John.3.16`), `{bible}`, and `{translation}` (see
+  display       What it writes: `{text}` (the passage), `{first:N}` and
+                `{last:N}` (its first or last N verses), `{reference}` (as
+                formatted, `John 3:16`), `{osis}` (`John.3.16`), `{usfm}`
+                (`JHN 3:16`), `{bible}`, and `{translation}` (see
                 |logoxide-translations|). Default `'{text}'`.
-  line_prefix   Written before each line of `{text}`, like `'> '`.
-  markup        `markup` for this insertion, over the one above (the same
+  line_prefix   Written before each line of the text, like `'> '`.
+  markup        `markup` for this template, over the one above (the same
                 keys, without colors).
-  replace       Where it goes:
-                - nil (the default): on the lines below the reference
-                - `'line'`: in place of the reference's whole line
-                - `'inline'`: in place of the reference, keeping the rest
-                  of its line
+  action        Its code action (|:LxInsert| offers them too):
+                - `'insert'`: on the lines below the reference ("Insert
+                  callout")
+                - `'replace-line'`: in place of the reference's whole line
+                  ("Replace line with callout")
+                - `'replace'`: in place of the reference, keeping the rest
+                  of its line ("Replace with callout")
+                - nil (the default): none, for |:LxCopy|, diagnostics,
+                  and inlay hints
 
-For example, an Obsidian callout, plain text, and a quote in place of the
-reference: >lua
-  insertions = {
-    {
-      name = 'Callout',
+For example, an Obsidian callout, a quote in place of the reference, and the
+first verse without its heading as each reference's diagnostic: >lua
+  templates = {
+    callout = {
       display = '> [!bible] {reference}\n{text}',
       line_prefix = '> ',
       markup = { headings = { show = false }, verse_numbers = { display = '{verse}' } },
+      action = 'insert',
     },
-    { name = 'Plain text', markup = { verse_numbers = { show = false } } },
     -- `See John 3:16 here` → `See “For God so loved ...” (John 3:16) here`
-    {
-      name = 'Quote',
-      replace = 'inline',
+    quote = {
       display = '“{text}” ({reference})',
       markup = { verse_numbers = { show = false }, headings = { show = false } },
+      action = 'replace',
     },
-  }
+    verse = { display = '{first:1}', markup = { headings = { show = false } } },
+  },
+  settings = { ['reference-diagnostics-template'] = 'verse' },
 <
+The old `insertions` list is an error that says how to write it as
+`templates`: `replace = 'line'` is `action = 'replace-line'`, `replace =
+'inline'` is `action = 'replace'`, and nothing is `action = 'insert'`.
+
  vim:tw=78:ts=8:ft=help:norl:

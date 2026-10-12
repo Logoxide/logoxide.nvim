@@ -239,6 +239,15 @@ function M.dir_references(passage)
   require('logoxide.search').references('directory', passage)
 end
 
+-- :LxCopy [register] and :LxInsert
+function M.copy(register)
+  require('logoxide.insert').copy(register)
+end
+
+function M.insert()
+  require('logoxide.insert').insert()
+end
+
 -- :LxBible [name]
 function M.bible(name)
   require('logoxide.bibles').set_default(name)

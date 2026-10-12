@@ -16,7 +16,8 @@ require("logoxide").setup({ cmd = { lsp = LOGOXIDE .. "/target/debug/logoxide-ls
   bible = WORK .. "/Bibles/BSB",
   bibles = { KJV = { path = WORK .. "/Bibles/KJV", aliases = { "AV" } } },
   markup = { words_of_jesus = { color = "#ff0000" }, verse_numbers = { highlight = "Special" } },
-  insertions = { { name = "Callout", display = "> [!bible] {reference}\n{text}", line_prefix = "> " } } })
+  templates = { callout = { display = "> [!bible] {reference}\n{text}", line_prefix = "> ", action = "insert" },
+    verse = { display = "{first:1}", markup = { headings = { show = false } } } } })
 vim.cmd("edit " .. WORK .. "/ws/open.txt")
 vim.wait(5000, function() return #vim.lsp.get_clients({ bufnr = 0, name = "logoxide" }) > 0 end)
 vim.wait(500)
@@ -251,10 +252,56 @@ do
   for _, r in pairs(vim.lsp.buf_request_sync(0, "textDocument/codeAction", params, 5000) or {}) do
     for _, a in ipairs(r.result or {}) do
       -- With several Bibles, an insertion per Bible
-      if a.title == "Insert Callout (BSB)" then vim.lsp.util.apply_workspace_edit(a.edit, client.offset_encoding) end
+      if a.title == "Insert callout (BSB)" then vim.lsp.util.apply_workspace_edit(a.edit, client.offset_encoding) end
     end
   end
   log("callout", table.concat(vim.api.nvim_buf_get_lines(0, 1, 4, false), "|"))
+end
+-- :LxCopy and :LxInsert: the templates filled for the reference, chosen in a picker
+do
+  local function choose(cmd, done)
+    local select, offered = vim.ui.select, 0
+    vim.ui.select = function(items, _, chosen) offered = #items; chosen(items[1]) end
+    vim.api.nvim_win_set_cursor(0, { 1, 6 })
+    vim.cmd(cmd)
+    if telescope then
+      vim.wait(5000, function() return vim.bo.filetype == "TelescopePrompt" end)
+      vim.wait(300)
+      local picker = require("telescope.actions.state").get_current_picker(vim.api.nvim_get_current_buf())
+      local n = picker.manager:num_results()
+      require("telescope.actions").select_default(vim.api.nvim_get_current_buf())
+      vim.wait(300)
+      vim.ui.select = select
+      return n
+    end
+    vim.wait(2000, done)
+    vim.ui.select = select
+    return offered
+  end
+  vim.fn.setreg("x", "")
+  local n = choose("LxCopy x", function() return vim.fn.getreg("x") ~= "" end)
+  log("copy", n, vim.fn.getregtype("x"), table.concat(vim.fn.getreg("x", 1, true), "|"))
+  local before = vim.api.nvim_buf_line_count(0)
+  local actions = choose("LxInsert", function() return vim.api.nvim_buf_line_count(0) ~= before end)
+  log("insert", actions, vim.api.nvim_buf_line_count(0) - before, vim.api.nvim_buf_get_lines(0, 1, 2, false)[1])
+  vim.cmd("silent undo")
+  -- Inlay hints from a template by name, with its markup (no heading)
+  local params = { textDocument = vim.lsp.util.make_text_document_params(0),
+    range = { start = { line = 0, character = 0 }, ["end"] = { line = 1, character = 0 } } }
+  local function hints(value)
+    local cfg = require("logoxide.config")
+    cfg.options.settings["inlay-hints"] = value
+    client.settings = { logoxide = cfg.lsp_settings() }
+    client:notify("workspace/didChangeConfiguration", { settings = client.settings })
+    vim.wait(200)
+  end
+  hints("verse")
+  local hint = ""
+  for _, r in pairs(vim.lsp.buf_request_sync(0, "textDocument/inlayHint", params, 5000) or {}) do
+    hint = r.result and r.result[1] and r.result[1].label or hint
+  end
+  log("verse hint", hint)
+  hints(nil)
 end
 -- Several Bibles: a reference followed by a Bible's name uses it; :LxBible sets the default
 do
