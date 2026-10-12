@@ -27,7 +27,7 @@ With lazy.nvim: >lua
     cmd = { 'LxSearch', 'LxQuery', 'LxExplicitOverlap', 'LxAnyOverlap',
             'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxFileReferences',
             'LxDirReferences', 'LxCopy', 'LxInsert', 'LxBuild', 'LxLspStart',
-            'LxLspStop',
+            'LxLspStop', 'LxSwitch', 'LxResume',
             'LxRead', 'LxBibleAdd', 'LxBibleSearch', 'LxBibleRemove' },
     opts = {
       bible = '~/Bibles/BSB',
@@ -270,6 +270,21 @@ completed with <Tab> (`John 3:` lists every verse).
                         split (`:horizontal LxParallel KJV`; vertical by
                         default).
 
+                                                                *:LxSwitch*
+:LxSwitch [name]     In a whole book, opens the same book in another Bible
+                        in this window, at the verse under the cursor (kept
+                        at the same height on screen). Without a name,
+                        choose one: Telescope previews the verse in each
+                        Bible (else |vim.ui.select()|).
+
+                                                                *:LxResume*
+:LxResume            Back to the last place read in a whole book: the book
+                        and the cursor's place in it. It's saved in Neovim's
+                        state folder (|stdpath()| `state`, `logoxide/
+                        last.json`) on leaving a book, so it works in a later
+                        session too. Takes a modifier for a split
+                        (`:vertical LxResume`).
+
                                                             *:LxBibleSearch*
 :LxBibleSearch {words}
                         Searches the catalogs (eBible.org's and fetch.bible's
@@ -315,6 +330,8 @@ the searches); the moving ones take a count (1 by default): >lua
   -- prev_heading
   logoxide.bible(name)                     -- :LxBible
   logoxide.parallel(name, mods)            -- :LxParallel
+  logoxide.switch(name)                    -- :LxSwitch
+  logoxide.resume(mods)                    -- :LxResume
   logoxide.bible_search(words)             -- :LxBibleSearch
   logoxide.bible_add(source)               -- :LxBibleAdd
   logoxide.bible_remove(id)                -- :LxBibleRemove

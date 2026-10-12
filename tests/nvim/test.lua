@@ -400,6 +400,46 @@ do
   -- The next run (with Telescope) uses the same workspace
   os.remove(WORK .. "/ws/kjv.txt")
 end
+-- :LxSwitch: the same verse in another Bible, in this window (Telescope previews it there);
+-- :LxResume: back to the last place read, which is saved too
+do
+  vim.cmd("only")
+  vim.cmd("edit logoxide://BSB/ROM")
+  for i, l in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
+    local col = l:find("[29]", 1, true)
+    if col then vim.api.nvim_win_set_cursor(0, { i, col - 1 }) end
+  end
+  local win = vim.api.nvim_get_current_win()
+  local function at_cursor()
+    local cursor = vim.api.nvim_win_get_cursor(0)
+    return vim.api.nvim_get_current_line():sub(cursor[2] + 1, cursor[2] + 13)
+  end
+  if telescope then
+    local columns, lines = vim.o.columns, vim.o.lines
+    vim.o.columns, vim.o.lines = 200, 50 -- wide enough for Telescope's previewer
+    vim.cmd("LxSwitch")
+    vim.wait(5000, function() return vim.bo.filetype == "TelescopePrompt" end)
+    local picker = require("telescope.actions.state").get_current_picker(vim.api.nvim_get_current_buf())
+    local preview = function()
+      local p = picker.previewer and picker.previewer.state
+      if not (p and p.winid and vim.api.nvim_win_is_valid(p.winid)) then return "" end
+      local row = vim.api.nvim_win_get_cursor(p.winid)[1]
+      return vim.api.nvim_buf_get_lines(p.bufnr, row - 1, row, false)[1] or ""
+    end
+    vim.wait(3000, function() return preview():find("For whom", 1, true) ~= nil end)
+    log("switch picker", picker.manager:num_results(), preview():find("For whom", 1, true) ~= nil)
+    require("telescope.actions").select_default(vim.api.nvim_get_current_buf())
+    vim.o.columns, vim.o.lines = columns, lines
+  else
+    vim.cmd("LxSwitch KJV")
+  end
+  vim.wait(5000, function() return vim.api.nvim_buf_get_name(0) == "logoxide://KJV/ROM" and at_cursor():find("^%[29%]") ~= nil end)
+  log("switch", vim.api.nvim_buf_get_name(0), vim.api.nvim_get_current_win() == win, at_cursor())
+  vim.cmd("buffer " .. WORK .. "/ws/open.txt")
+  vim.cmd("LxResume")
+  log("resume", vim.api.nvim_buf_get_name(0), at_cursor(), vim.fn.filereadable(vim.fn.stdpath("state") .. "/logoxide/last.json"))
+  vim.cmd("buffer " .. WORK .. "/ws/open.txt")
+end
 -- :LxRead: a book by name, the next and previous book, another Bible, and the picker
 do
   vim.cmd("LxRead jn")

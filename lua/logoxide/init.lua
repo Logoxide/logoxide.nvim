@@ -265,6 +265,15 @@ function M.insert()
   require('logoxide.insert').insert()
 end
 
+-- :LxSwitch [name] and :LxResume
+function M.switch(name)
+  require('logoxide.bibles').switch(name)
+end
+
+function M.resume(mods)
+  require('logoxide.read').resume(mods)
+end
+
 -- :LxBible [name]
 function M.bible(name)
   require('logoxide.bibles').set_default(name)
@@ -321,6 +330,7 @@ function M.setup(opts)
   config.set(opts)
   require('logoxide.commands').create()
   require('logoxide.book').setup()
+  require('logoxide.read').track()
   vim.lsp.commands['logoxide.search'] = search_command
   vim.lsp.commands['logoxide.applyEdits'] = apply_edits_command
   local ok, telescope = pcall(require, 'telescope')

@@ -140,6 +140,18 @@ local commands = {
     end,
     { nargs = '?', complete = bible_names, desc = 'This whole book in another Bible, side by side on the same verse' },
   },
+  LxSwitch = {
+    function(opts)
+      api().switch(opts.args)
+    end,
+    { nargs = '?', complete = bible_names, desc = 'This whole book in another Bible, here, at the same verse' },
+  },
+  LxResume = {
+    function(opts)
+      api().resume(opts.mods)
+    end,
+    { desc = 'Back to the last place read in a whole book' },
+  },
   LxRead = {
     function(opts)
       api().read(opts.args, opts.mods)

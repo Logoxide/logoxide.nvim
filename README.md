@@ -17,10 +17,10 @@ With [lazy.nvim](https://lazy.folke.io):
   cmd = { 'LxSearch', 'LxQuery', 'LxExplicitOverlap', 'LxAnyOverlap',
           'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxFileReferences',
           'LxDirReferences', 'LxCopy', 'LxInsert', 'LxBuild', 'LxLspStart', 'LxLspStop',
-          'LxBible', 'LxParallel', 'LxRead', 'LxBibleAdd', 'LxBibleSearch',
-          'LxBibleRemove', 'LxNextBook', 'LxPrevBook', 'LxNextChapter',
-          'LxPrevChapter', 'LxNextVerse', 'LxPrevVerse', 'LxNextHeading',
-          'LxPrevHeading' },
+          'LxBible', 'LxParallel', 'LxSwitch', 'LxResume', 'LxRead', 'LxBibleAdd',
+          'LxBibleSearch', 'LxBibleRemove', 'LxNextBook', 'LxPrevBook',
+          'LxNextChapter', 'LxPrevChapter', 'LxNextVerse', 'LxPrevVerse',
+          'LxNextHeading', 'LxPrevHeading' },
   opts = {
     -- A folder of USX files, one book each (JHN.usx): hover shows the text, and go to
     -- definition opens the whole book
@@ -85,7 +85,9 @@ With [lazy.nvim](https://lazy.folke.io):
   `:LxBible KJV` changes the default, and `:LxParallel KJV` opens the same book in another
   Bible next to the current one, kept on the same verse (and book, as either moves to another),
   with the verse marked in the other window (`parallel = { highlight = 'Visual' }` or
-  `{ color = '#2a3340' }`; `CursorLine` by default)
+  `{ color = '#2a3340' }`; `CursorLine` by default); `:LxSwitch` opens it in another Bible in
+  place, at the same verse (choosing one in Telescope previews the verse in each), and
+  `:LxResume` goes back to the last place read in a whole book, in a later session too
 - **Installing Bibles** (logoxide packages, with `lx`): `:LxBibleSearch world english` searches
   the catalogs (eBible.org's and fetch.bible's translations) and installs the one you choose,
   `:LxBibleAdd https://...` adds a package from its git repository (or `ebible:<id>`,

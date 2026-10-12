@@ -182,6 +182,9 @@ local function show_preview(bufnr, preview)
   end
 end
 
+-- For :LxSwitch's previews
+M.load_preview, M.show_preview = load_preview, show_preview
+
 -- Chooses a book of `bible` (Telescope with previews, else vim.ui.select), then opens it
 local function pick(bible, current, mods)
   local index = 1
@@ -495,6 +498,55 @@ function M.complete(lead, cmdline, pos)
     end
   end
   return candidates
+end
+
+-- The last place read in a whole book ({ uri, line, col }), kept in Neovim's state folder so
+-- :LxResume finds it in a later session too
+local last
+local last_file = vim.fs.joinpath(vim.fn.stdpath('state'), 'logoxide', 'last.json')
+
+local function save_last()
+  if last then
+    vim.fn.mkdir(vim.fs.dirname(last_file), 'p')
+    pcall(vim.fn.writefile, { vim.json.encode(last) }, last_file)
+  end
+end
+
+-- Remembers where the cursor is in whole books, saving it on leaving one (and Neovim)
+function M.track()
+  local group = vim.api.nvim_create_augroup('logoxide_last_place', { clear = true })
+  local function remember(args)
+    local cursor = vim.api.nvim_win_get_cursor(0)
+    last = { uri = vim.api.nvim_buf_get_name(args.buf), line = cursor[1], col = cursor[2] }
+  end
+  local pattern = book.scheme .. '://*'
+  vim.api.nvim_create_autocmd('CursorMoved', { group = group, pattern = pattern, callback = remember })
+  vim.api.nvim_create_autocmd('BufLeave', {
+    group = group,
+    pattern = pattern,
+    callback = function(args)
+      remember(args)
+      save_last()
+    end,
+  })
+  vim.api.nvim_create_autocmd('VimLeavePre', { group = group, callback = save_last })
+end
+
+-- :LxResume: back to the last place read in a whole book (this session's, else the last saved)
+function M.resume(mods)
+  if not last then
+    local ok, lines = pcall(vim.fn.readfile, last_file)
+    local decoded, place = pcall(vim.json.decode, ok and lines[1] or '')
+    last = decoded and type(place) == 'table' and type(place.uri) == 'string' and place or nil
+  end
+  if not last then
+    return vim.notify('logoxide: no whole book read yet (:LxRead)', vim.log.levels.WARN)
+  end
+  local place = last
+  open({ uri = place.uri }, mods)
+  local count = vim.api.nvim_buf_line_count(0)
+  pcall(vim.api.nvim_win_set_cursor, 0, { math.min(place.line, count), place.col })
+  vim.cmd('normal! zz')
 end
 
 return M

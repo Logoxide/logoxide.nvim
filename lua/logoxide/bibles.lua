@@ -1,6 +1,7 @@
 --[[
-Several Bibles (`bible` and `bibles`): which one references use by default (:LxBible), and a
-whole book next to the same book in another Bible, kept on the same verse (:LxParallel).
+Several Bibles (`bible` and `bibles`): which one references use by default (:LxBible), a whole
+book next to the same book in another Bible, kept on the same verse (:LxParallel), and the same
+verse in another Bible in its place (:LxSwitch).
 ]]
 local config = require('logoxide.config')
 
@@ -127,17 +128,14 @@ local function mark(win, range)
   end
 end
 
---[[
-Moves `win` to `location`, the verse (opening its book there, when `from` went to another book),
-at the same screen row as the cursor in `from`, and marks the verse; a cursor already in the
-verse stays where it is
-]]
-local function follow(from, win, location)
-  if not (location and vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_is_valid(from)) then
-    return
-  end
-  local offset = vim.api.nvim_win_get_cursor(from)[1] - vim.fn.line('w0', from)
-  following[win] = true
+-- How many rows the cursor is below the top of `win`
+local function cursor_offset(win)
+  return vim.api.nvim_win_get_cursor(win)[1] - vim.fn.line('w0', win)
+end
+
+-- Puts `win` on `location`, the verse (opening its book there), `offset` rows below the
+-- window's top; a cursor already in the verse stays where it is
+local function go(win, location, offset)
   pcall(vim.api.nvim_win_call, win, function()
     if vim.api.nvim_buf_get_name(0) ~= location.uri then
       unmark(win)
@@ -153,6 +151,18 @@ local function follow(from, win, location)
       vim.fn.winrestview({ lnum = row + 1, col = col, topline = math.max(1, row + 1 - offset) })
     end
   end)
+end
+
+--[[
+Moves `win` to `location`, the verse (opening its book there, when `from` went to another book),
+at the same screen row as the cursor in `from`, and marks the verse
+]]
+local function follow(from, win, location)
+  if not (location and vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_is_valid(from)) then
+    return
+  end
+  following[win] = true
+  go(win, location, cursor_offset(from))
   following[win] = nil
   mark(win, location.range)
 end
@@ -233,6 +243,91 @@ function M.parallel(name, mods)
     link(win, other)
     -- The verse marked in the others
     sync(other)
+  end)
+end
+
+-- Chooses another Bible for :LxSwitch: Telescope, previewing the verse in each, else
+-- vim.ui.select; then `done(name)`
+local function choose_switch(win, current, done)
+  if config.options.picker == 'quickfix' or not pcall(require, 'telescope') then
+    return choose('Switch ' .. current .. ' to', current, done)
+  end
+  local names = vim.tbl_filter(function(name)
+    return name ~= current
+  end, M.names())
+  if #names == 0 then
+    return vim.notify('logoxide: no other Bible (set `bible` or `bibles`)', vim.log.levels.WARN)
+  end
+  local read = require('logoxide.read')
+  local actions = require('telescope.actions')
+  local state = require('telescope.actions.state')
+  require('telescope.pickers')
+    .new({}, {
+      prompt_title = 'Switch ' .. current .. ' to',
+      finder = require('telescope.finders').new_table({ results = names }),
+      sorter = require('telescope.config').values.generic_sorter({}),
+      previewer = require('telescope.previewers').new_buffer_previewer({
+        title = 'The same verse',
+        define_preview = function(self, entry)
+          local bufnr, winid = self.state.bufnr, self.state.winid
+          vim.wo[winid].wrap = true
+          vim.wo[winid].linebreak = true
+          same_verse(win, entry.value, function(location)
+            if not location then
+              return vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { entry.value .. " doesn't have this book" })
+            end
+            read.load_preview(location.uri, function(preview)
+              -- Only if this Bible is still the one previewed
+              if not (self.state and self.state.bufnr == bufnr and vim.api.nvim_win_is_valid(winid)) then
+                return
+              end
+              read.show_preview(bufnr, preview)
+              local row, col = byte_position(bufnr, location.range.start)
+              local end_row, end_col = byte_position(bufnr, location.range['end'])
+              pcall(vim.api.nvim_buf_set_extmark, bufnr, verse_ns, row, col, {
+                end_row = end_row,
+                end_col = end_col,
+                hl_group = 'LogoxideParallelVerse',
+              })
+              pcall(vim.api.nvim_win_set_cursor, winid, { row + 1, col })
+              vim.api.nvim_win_call(winid, function()
+                vim.cmd('normal! zz')
+              end)
+            end)
+          end)
+        end,
+      }),
+      attach_mappings = function(prompt_bufnr)
+        actions.select_default:replace(function()
+          local entry = state.get_selected_entry()
+          actions.close(prompt_bufnr)
+          if entry then
+            done(entry.value)
+          end
+        end)
+        return true
+      end,
+    })
+    :find()
+end
+
+-- :LxSwitch [name]: this whole book in another Bible, in this window, at the same verse (without
+-- a name, choose one, seeing the verse in each)
+function M.switch(name)
+  local win = vim.api.nvim_get_current_win()
+  local current = bible_of(vim.api.nvim_win_get_buf(win))
+  if not current then
+    return vim.notify('logoxide: :LxSwitch works in a whole book (:LxRead, or go to definition)', vim.log.levels.WARN)
+  end
+  if not name or name == '' then
+    return choose_switch(win, current, M.switch)
+  end
+  local offset = cursor_offset(win)
+  same_verse(win, name, function(location)
+    if not location then
+      return vim.notify('logoxide: ' .. name .. " doesn't have this book", vim.log.levels.WARN)
+    end
+    go(win, location, offset)
   end)
 end
 
