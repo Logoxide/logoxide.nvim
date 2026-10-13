@@ -20,25 +20,29 @@ local function book_of(bufnr)
   return name and vim.uri_decode(name), code
 end
 
--- Book names by USFM code (JHN → John), from the CLI (it reads `JHN 1` as John 1)
-local names = {}
+-- Book names by USFM code (JHN → John), from the CLI: every book it knows (`--list-books`),
+-- written as USFM (`Matthew 1` → `MAT 1`). Its codes can't be read back for all books, since
+-- some are words it leaves alone (MAT, NUM, ACT)
+local names
 
-local function name_codes(codes)
-  local missing = vim.tbl_filter(function(code)
-    return not names[code]
-  end, codes)
+local function name_codes()
   local path = bin.path('cli')
-  if #missing == 0 or not path then
+  if names or not path then
     return
   end
-  local lines = vim.tbl_map(function(code)
-    return code .. ' 1'
-  end, missing)
-  local result = vim.system({ path, '-m', 'json', '--text', table.concat(lines, '\n') }, { text = true }):wait()
+  names = {}
+  local books = vim.system({ path, '--list-books' }, { text = true }):wait()
+  local lines = {}
+  for name in (books.stdout or ''):gmatch('[^\n]+') do
+    table.insert(lines, name .. ' 1')
+  end
+  local text = table.concat(lines, '\n')
+  local result = vim.system({ path, '--chapters', '-m', 'json', '-f', 'usfm', '--text', text }, { text = true }):wait()
   for json in (result.stdout or ''):gmatch('[^\n]+') do
     local ok, m = pcall(vim.json.decode, json)
-    if ok and type(m) == 'table' and missing[m.line] and type(m.book) == 'string' then
-      names[missing[m.line]] = m.book
+    local code = ok and type(m) == 'table' and type(m.reference) == 'string' and m.reference:match('^(%S+)')
+    if code and type(m.book) == 'string' then
+      names[code] = m.book
     end
   end
 end
@@ -66,11 +70,11 @@ function M.bible(name)
   if not found then
     return nil
   end
-  name_codes(found.books)
+  name_codes()
   local books = vim.tbl_map(function(code)
     return {
       code = code,
-      name = names[code] or code,
+      name = names and names[code] or code,
       uri = ('%s://%s/%s'):format(book.scheme, encode(found.name), code),
     }
   end, found.books)
