@@ -263,14 +263,21 @@ do
     local select, offered = vim.ui.select, 0
     vim.ui.select = function(items, _, chosen) offered = #items; chosen(items[1]) end
     vim.api.nvim_win_set_cursor(0, { 1, 6 })
+    local columns, lines = vim.o.columns, vim.o.lines
+    if telescope then vim.o.columns, vim.o.lines = 200, 50 end -- wide enough for Telescope's previewer
     vim.cmd(cmd)
     if telescope then
       vim.wait(5000, function() return vim.bo.filetype == "TelescopePrompt" end)
       vim.wait(300)
       local picker = require("telescope.actions.state").get_current_picker(vim.api.nvim_get_current_buf())
       local n = picker.manager:num_results()
+      local preview = picker.previewer.state and picker.previewer.state.bufnr
+      if preview then
+        log(cmd .. " preview", vim.bo[preview].filetype, table.concat(vim.api.nvim_buf_get_lines(preview, 0, 6, false), "|"))
+      end
       require("telescope.actions").select_default(vim.api.nvim_get_current_buf())
       vim.wait(300)
+      vim.o.columns, vim.o.lines = columns, lines
       vim.ui.select = select
       return n
     end

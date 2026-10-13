@@ -148,6 +148,8 @@ if [[ -d "$plugins/telescope.nvim" && -d "$plugins/plenary.nvim" ]]; then
   grep -q 'telescope ext Search "Rom 8:28" for explicit overlap 1' <<<"$output" || { echo "FAIL (telescope extension)"; status=1; }
   grep -qxF 'live references 1 2 4 0' <<<"$output" || { echo "FAIL (telescope live references)"; grep '^live' <<<"$output"; status=1; }
   grep -qxF 'switch picker 1 true' <<<"$output" || { echo "FAIL (telescope :LxSwitch)"; grep '^switch' <<<"$output"; status=1; }
+  grep -qxF 'LxCopy x preview markdown > [!bible] John 3:16|> Jesus and Nicodemus|> [16] For God so loved the world.' <<<"$output" || { echo "FAIL (telescope :LxCopy preview)"; grep 'preview' <<<"$output"; status=1; }
+  grep -qxF 'LxInsert preview diff --- open.txt|+++ open.txt|@@ -4,0 +5,3 @@|+> [!bible] John 3:16|+> Jesus and Nicodemus|+> [16] For God so loved the world.' <<<"$output" || { echo "FAIL (telescope :LxInsert diff)"; grep 'preview' <<<"$output"; status=1; }
   grep -qxF 'read picker Read BSB 2 John @lsp.type.heading.logoxide' <<<"$output" || { echo "FAIL (telescope :LxRead)"; grep '^read picker' <<<"$output"; status=1; }
 else
   echo "skipped (telescope): not found in $plugins"

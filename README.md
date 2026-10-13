@@ -100,7 +100,7 @@ With [lazy.nvim](https://lazy.folke.io):
   ...), each with its own markup: code actions that write it below its reference (like an
   Obsidian callout), in place of its line, or in place of the reference; `:LxCopy` copies the
   passage under the cursor in one and `:LxInsert` writes it, choosing in Telescope with a
-  preview; and diagnostics and inlay hints can name one
+  preview (of the text, or for `:LxInsert` the diff of the buffer); and diagnostics and inlay hints can name one
   (`['reference-diagnostics-template'] = 'verse'`)
 - **Commands**: `:LxSearch` (every reference), `:LxQuery -g Wisdom` (the CLI's options,
   completed with Tab), and `:LxExplicitOverlap John 3:16`, `:LxAnyOverlap`,

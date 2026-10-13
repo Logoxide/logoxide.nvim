@@ -164,7 +164,8 @@ the language server's workspace folder (or a root marker, or the cwd).
                         each; just the passage's text without any).
                                                                 *:LxInsert*
 :LxInsert            Writes it with the template chosen (those with an
-                        `action`), like its code action.
+                        `action`), like its code action (Telescope previews
+                        each as a diff of the buffer).
 
 `settings['reference-diagnostics-template']` and `settings['inlay-hints']`
 can name a template too (with its markup), or be one, shown on one line for
