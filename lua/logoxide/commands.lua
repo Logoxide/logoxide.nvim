@@ -38,22 +38,32 @@ function M.complete_flags(_, cmdline, pos)
   return candidates
 end
 
--- Completes a reference (books, then chapters, verses, and range ends), replacing only the
--- last word, since that is what the command line swaps in
-function M.complete_passage(_, cmdline, pos)
+--[[
+Completes a reference (books, then chapters, verses, and range ends). The command line swaps in
+a candidate for the last word only (`lead`), so each is the suggestion without the words before
+it: after `mt 5:`, `5:3`; after `mt`, `Matthew 1` (the book's name replaces the abbreviation)
+]]
+function M.complete_passage(lead, cmdline, pos)
   local path = bin.path('cli')
   if not path then
     return {}
   end
   local typed = cmdline:sub(1, pos):gsub('^%S+%s*', '')
+  local before = typed:sub(1, #typed - #(lead or ''))
+  local skip = select(2, before:gsub('%S+', ''))
   local result = vim.system({ path, '--complete', typed }, { text = true }):wait()
   local seen, candidates = {}, {}
   for candidate in (result.stdout or ''):gmatch('[^\n]+') do
-    local last = typed:match('%s$') and candidate:match('%S+$') or candidate:match('%S+$')
+    local rest
+    if candidate:lower():sub(1, #before) == before:lower() then
+      rest = candidate:sub(#before + 1)
+    else
+      rest = table.concat(vim.list_slice(vim.split(candidate, ' ', { trimempty = true }), skip + 1), ' ')
+    end
     -- What's typed is already on the command line (topos offers it first, for editors)
-    if last and not seen[last] and candidate ~= vim.trim(typed) then
-      seen[last] = true
-      table.insert(candidates, last)
+    if rest ~= '' and not seen[rest] and candidate ~= vim.trim(typed) then
+      seen[rest] = true
+      table.insert(candidates, rest)
     end
   end
   return candidates
