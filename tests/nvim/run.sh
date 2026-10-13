@@ -76,8 +76,8 @@ USX
 
 expected='lsp logoxide hints true
 diagnostic HINT reference John 3:16
-search Bible references 7
-query topos -g Gospels --exclude-book Luke 5
+search Bible references 6
+query topos -g Gospels --exclude-book Luke 4
 explicit Search "John 3:16" for explicit overlap 4
 exact at cursor Search "John 3:16" for exact overlap 2
 any Search "John 3" for any overlap 5
@@ -130,10 +130,11 @@ check() {
     'unnamed before 0' 'unnamed after 1 John 3:16' 'unnamed reformat Read John 3:16 today' 'unnamed edited Romans 8:28' 'restarted 1 true true true' \
     'stopped 0 0' 'started again 1' \
     'switch logoxide://KJV/ROM true [29] For whom' 'resume logoxide://KJV/ROM [29] For whom 1' \
+    'read at logoxide://KJV/ROM [29] For whom' \
     'book off true' 'book file logoxide-file true Rom 8:28 Gill' \
     'search folders 0 1 1' \
     'complete typed Matthew 1 Matthew 10' 'hover trim "" "Jesus and …"' \
-    'file references 4 1 3 2 1' 'dir references 5 1' \
+    'file references 3 1 2 2 1' 'dir references 5 1' \
     'copy 4 V > [!bible] John 3:16|> Jesus and Nicodemus|> [16] For God so loved the world.' \
     'insert 2 3 > [!bible] John 3:16' 'verse hint [16] For God so loved the world.'; do
     if ! grep -qxF "$line" <<<"$output"; then
@@ -150,7 +151,9 @@ if [[ -d "$plugins/telescope.nvim" && -d "$plugins/plenary.nvim" ]]; then
   output=$(run WITH_TELESCOPE=1 PLUGINS="$plugins")
   check telescope "$output"
   grep -q 'telescope ext Search "Rom 8:28" for explicit overlap 1' <<<"$output" || { echo "FAIL (telescope extension)"; status=1; }
-  grep -qxF 'live references 1 2 4 0' <<<"$output" || { echo "FAIL (telescope live references)"; grep '^live' <<<"$output"; status=1; }
+  grep -qxF 'live references 1 2 3 0' <<<"$output" || { echo "FAIL (telescope live references)"; grep '^live' <<<"$output"; status=1; }
+  grep -qxF 'read at picker Romans 8:28 true' <<<"$output" && grep -qxF 'read at chosen logoxide://BSB/ROM [29] For thos' <<<"$output" ||
+    { echo "FAIL (telescope :LxReadAt)"; grep '^read at' <<<"$output"; status=1; }
   grep -qxF 'switch picker 1 true' <<<"$output" || { echo "FAIL (telescope :LxSwitch)"; grep '^switch' <<<"$output"; status=1; }
   grep -qxF 'LxCopy x preview markdown > [!bible] John 3:16|> Jesus and Nicodemus|> [16] For God so loved the world.' <<<"$output" || { echo "FAIL (telescope :LxCopy preview)"; grep 'preview' <<<"$output"; status=1; }
   grep -qxF 'LxInsert preview diff --- open.txt|+++ open.txt|@@ -4,0 +5,3 @@|+> [!bible] John 3:16|+> Jesus and Nicodemus|+> [16] For God so loved the world.' <<<"$output" || { echo "FAIL (telescope :LxInsert diff)"; grep 'preview' <<<"$output"; status=1; }

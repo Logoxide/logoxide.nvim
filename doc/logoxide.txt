@@ -28,7 +28,7 @@ With lazy.nvim: >lua
             'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxFileReferences',
             'LxDirReferences', 'LxCopy', 'LxInsert', 'LxBuild', 'LxLspStart',
             'LxLspStop', 'LxSwitch', 'LxResume',
-            'LxRead', 'LxBibleAdd', 'LxBibleSearch', 'LxBibleRemove' },
+            'LxRead', 'LxReadAt', 'LxBibleAdd', 'LxBibleSearch', 'LxBibleRemove' },
     opts = {
       bible = '~/Bibles/BSB',
       settings = { format = 'abbreviation', ['inlay-hints'] = 'never' },
@@ -144,6 +144,8 @@ them (see `auto_build`). Binaries on your PATH work too.
     -- group to link to, or false for no mark; or `color`, a background
     -- color ('#2a3340') or a highlight definition
     parallel = { highlight = nil, color = nil },
+    -- |:LxReadAt|'s preview: verses shown above the one chosen
+    read_at = { context = 3 },
     -- 'auto' (Telescope if installed), 'telescope', or 'quickfix'
     picker = 'auto',
     -- searches reuse the CLI's cache for unchanged files (`--cache`);
@@ -241,6 +243,24 @@ completed with <Tab> (`John 3:` lists every verse).
                         names are completed with <Tab>. Starts logoxide-lsp if it
                         isn't running (as `:edit logoxide://...` does).
 
+                                                                *:LxReadAt*
+:LxReadAt [reference] [name]
+                        Opens a reference's whole book with the cursor on
+                        its verse (`:LxReadAt John 3:16`, `jn 3`), in the
+                        Bible named after it (`:LxReadAt John 3:16 KJV`),
+                        else the current whole book's Bible, else the
+                        default. Without a reference (`:LxReadAt` or
+                        `:LxReadAt KJV`), type one in Telescope: as you
+                        type, it suggests books, then chapters, then
+                        verses (`topos --complete`); <Tab> puts the one
+                        selected in the prompt (`John ` for a book, `John 3:`
+                        for a chapter), the preview shows its verse in the
+                        Bible, marked, below the 3 verses before it
+                        (`read_at = { context = 3 }`; a chapter from its
+                        label, unmarked), and <CR> opens it. Without Telescope, asks
+                        with |vim.ui.input()|. Takes a modifier for a
+                        split (`:vertical LxReadAt Rom 8:28`).
+
                                     *:LxNextBook* *:LxPrevBook*
                               *:LxNextChapter* *:LxPrevChapter*
                                   *:LxNextVerse* *:LxPrevVerse*
@@ -331,6 +351,7 @@ the searches); the moving ones take a count (1 by default): >lua
   logoxide.file_references(passage)        -- :LxFileReferences
   logoxide.dir_references(passage)         -- :LxDirReferences
   logoxide.read(book, mods)                -- :LxRead ('John KJV', 'vertical')
+  logoxide.read_at(reference, mods)        -- :LxReadAt ('John 3:16 KJV', '')
   logoxide.next_book(count)                -- :LxNextBook, and prev_book,
   -- next_chapter, prev_chapter, next_verse, prev_verse, next_heading,
   -- prev_heading

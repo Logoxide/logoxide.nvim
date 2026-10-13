@@ -174,6 +174,18 @@ local commands = {
       desc = 'Open a whole book of the Bible (choose one without a book)',
     },
   },
+  LxReadAt = {
+    function(opts)
+      api().read_at(opts.args, opts.mods)
+    end,
+    {
+      nargs = '*',
+      complete = function(...)
+        return require('logoxide.read').complete_at(...)
+      end,
+      desc = 'Open a reference in its whole book, at the verse (choose one as you type it, in Telescope)',
+    },
+  },
   LxBibleAdd = {
     function(opts)
       api().bible_add(opts.args)

@@ -447,6 +447,47 @@ do
   log("resume", vim.api.nvim_buf_get_name(0), at_cursor(), vim.fn.filereadable(vim.fn.stdpath("state") .. "/logoxide/last.json"))
   vim.cmd("buffer " .. WORK .. "/ws/open.txt")
 end
+-- :LxReadAt: a reference opens its book at the verse, in the Bible named (Telescope completes
+-- what's typed and previews the verse)
+do
+  local function at_cursor()
+    local cursor = vim.api.nvim_win_get_cursor(0)
+    return vim.api.nvim_get_current_line():sub(cursor[2] + 1, cursor[2] + 13)
+  end
+  vim.cmd("LxReadAt rom 8:29 KJV")
+  vim.wait(5000, function() return at_cursor():find("^%[29%]") ~= nil end)
+  log("read at", vim.api.nvim_buf_get_name(0), at_cursor())
+  vim.cmd("buffer " .. WORK .. "/ws/open.txt")
+  if telescope then
+    local columns, lines = vim.o.columns, vim.o.lines
+    vim.o.columns, vim.o.lines = 200, 50
+    vim.cmd("LxReadAt")
+    vim.wait(5000, function() return vim.bo.filetype == "TelescopePrompt" end)
+    local prompt = vim.api.nvim_get_current_buf()
+    local picker = require("telescope.actions.state").get_current_picker(prompt)
+    picker:set_prompt("Romans 8:28")
+    local function selected()
+      local entry = require("telescope.actions.state").get_selected_entry()
+      return entry and entry.value or ""
+    end
+    vim.wait(5000, function() return selected() == "Romans 8:28" end)
+    local preview = function()
+      local p = picker.previewer and picker.previewer.state
+      if not (p and p.winid and vim.api.nvim_win_is_valid(p.winid)) then return "" end
+      local row = vim.api.nvim_win_get_cursor(p.winid)[1]
+      return vim.api.nvim_buf_get_lines(p.bufnr, row - 1, row, false)[1] or ""
+    end
+    vim.wait(3000, function() return preview():find("[28]", 1, true) ~= nil end)
+    log("read at picker", selected(), preview():find("[28]", 1, true) ~= nil)
+    picker:set_prompt("Romans 8:29")
+    vim.wait(5000, function() return selected() == "Romans 8:29" end)
+    require("telescope.actions").select_default(prompt)
+    vim.o.columns, vim.o.lines = columns, lines
+    vim.wait(5000, function() return at_cursor():find("^%[29%]") ~= nil end)
+    log("read at chosen", vim.api.nvim_buf_get_name(0), at_cursor())
+    vim.cmd("buffer " .. WORK .. "/ws/open.txt")
+  end
+end
 -- :LxRead: a book by name, the next and previous book, another Bible, and the picker
 do
   vim.cmd("LxRead jn")

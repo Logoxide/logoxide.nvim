@@ -289,6 +289,11 @@ function M.read(book, mods)
   require('logoxide.read').read(book, mods)
 end
 
+-- :LxReadAt [reference] [bible], with a split modifier like 'vertical'
+function M.read_at(reference, mods)
+  require('logoxide.read').read_at(reference, mods)
+end
+
 -- :LxNextBook, :LxPrevChapter, :LxNextHeading, ... (count: how many; 1 by default)
 for _, unit in ipairs({ 'book', 'chapter', 'verse', 'heading' }) do
   M['next_' .. unit] = function(count)

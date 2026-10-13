@@ -92,7 +92,7 @@ local function find(books, text)
   end
   local path = bin.path('cli')
   if path then
-    local result = vim.system({ path, '-m', 'json', '--text', text .. ' 1' }, { text = true }):wait()
+    local result = vim.system({ path, '--chapters', '-m', 'json', '--text', text .. ' 1' }, { text = true }):wait()
     local ok, m = pcall(vim.json.decode, (result.stdout or ''):match('[^\n]+') or '')
     if ok and type(m) == 'table' then
       for _, b in ipairs(books) do
@@ -551,6 +551,212 @@ function M.resume(mods)
   local count = vim.api.nvim_buf_line_count(0)
   pcall(vim.api.nvim_win_set_cursor, 0, { math.min(place.line, count), place.col })
   vim.cmd('normal! zz')
+end
+
+-- A 0-based UTF-16 LSP position in `lines` as a 0-based row and byte column
+local function byte_position(lines, position)
+  local row = math.max(0, math.min(position.line, #lines - 1))
+  local ok, col = pcall(vim.str_byteindex, lines[row + 1] or '', 'utf-16', position.character, false)
+  return row, ok and col or 0
+end
+
+--[[
+Where `text` (`John 3:16`, `jn 3`, `John`) is in `bible`'s whole book, then `done(uri, range,
+top)`: its verse's range (nil for a chapter or book), and where to show it from, `read_at.context`
+verses before the verse (else the chapter's label; nil for the book's start); `done(nil)` if the
+Bible doesn't have the book. The chapter and verse come from logoxide-lsp's document symbols (`John 3`,
+`John 3:16-17`)
+]]
+local function locate(bible, text, done)
+  local path, c = bin.path('cli'), client()
+  local m
+  if path then
+    local result = vim.system({ path, '--chapters', '-m', 'json', '--text', text }, { text = true }):wait()
+    if result.code ~= 0 and (result.stderr or ''):find('--chapters', 1, true) then
+      return vim.notify('logoxide: this topos is too old for :LxReadAt; update it (:LxBuild!)', vim.log.levels.ERROR)
+    end
+    local ok, decoded = pcall(vim.json.decode, (result.stdout or ''):match('[^\n]+') or '')
+    m = ok and type(decoded) == 'table' and decoded or nil
+  end
+  local found
+  for _, b in ipairs(bible.books) do
+    if m and b.name == m.book then
+      found = b
+    end
+  end
+  found = found or find(bible.books, text)
+  if not found then
+    return done(nil)
+  end
+  local start = m and type(m.segments) == 'table' and m.segments[1] and m.segments[1].start
+  local chapter = type(start) == 'table' and start.chapter or tonumber(start)
+  local verse = type(start) == 'table' and start.verse or nil
+  if not (chapter and c) then
+    return done(found.uri, nil)
+  end
+  c:request('textDocument/documentSymbol', { textDocument = { uri = found.uri } }, function(_, symbols)
+    for _, symbol in ipairs(symbols or {}) do
+      if tonumber(symbol.name:match('(%d+)$')) == chapter then
+        local children = verse and symbol.children or {}
+        for i, child in ipairs(children) do
+          local first, last = child.name:match(':(%d+)%-?(%d*)$')
+          first = tonumber(first)
+          if first and first <= verse and verse <= (tonumber(last) or first) then
+            local before = children[i - math.max(0, config.options.read_at.context or 0)]
+            return done(found.uri, child.range, (before or symbol).range.start)
+          end
+        end
+        return done(found.uri, nil, symbol.range.start)
+      end
+    end
+    done(found.uri, nil)
+  end)
+end
+
+-- Opens `text` (a reference) in `bible`'s whole book, with the cursor on its verse
+local function open_at(bible, text, mods)
+  locate(bible, text, function(uri, range, top)
+    if not uri then
+      return vim.notify(('logoxide: %s has no book for "%s"'):format(bible.name, text), vim.log.levels.WARN)
+    end
+    open({ uri = uri }, mods)
+    local at = range and range.start or top
+    if at then
+      local row, col = byte_position(vim.api.nvim_buf_get_lines(0, 0, -1, false), at)
+      pcall(vim.api.nvim_win_set_cursor, 0, { row + 1, col })
+      vim.cmd('normal! zz')
+    end
+  end)
+end
+
+local verse_ns = vim.api.nvim_create_namespace('logoxide_read_at_verse')
+
+--[[
+Chooses a reference in Telescope, its prompt completed as you type (books, then chapters, then
+verses, from `topos --complete`; <Tab> takes the one selected), previewing it in `bible`, then
+opens it there
+]]
+local function pick_at(bible, mods)
+  local path = bin.path('cli')
+  if not path then
+    return vim.notify('logoxide: the topos CLI is not built yet; run :LxBuild', vim.log.levels.ERROR)
+  end
+  local actions = require('telescope.actions')
+  local state = require('telescope.actions.state')
+  require('telescope.pickers')
+    .new({}, {
+      prompt_title = 'Read at (' .. bible.name .. ')',
+      debounce = 50,
+      finder = require('telescope.finders').new_job(function(prompt)
+        return { path, '-m', 'json', '--complete', prompt or '' }
+      end, function(line)
+        local ok, s = pcall(vim.json.decode, line)
+        if ok and type(s) == 'table' and type(s.text) == 'string' then
+          return { value = s.text, display = s.label or s.text, ordinal = s.text, kind = s.kind }
+        end
+      end),
+      sorter = require('telescope.sorters').empty(),
+      previewer = require('telescope.previewers').new_buffer_previewer({
+        title = bible.name,
+        define_preview = function(self, entry)
+          local bufnr, winid = self.state.bufnr, self.state.winid
+          vim.wo[winid].wrap = true
+          vim.wo[winid].linebreak = true
+          locate(bible, entry.value, function(uri, range, top)
+            if not uri then
+              return vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { bible.name .. " doesn't have this book" })
+            end
+            load_preview(uri, function(preview)
+              -- Only if this reference is still the one previewed
+              if not (self.state and self.state.bufnr == bufnr and vim.api.nvim_win_is_valid(winid)) then
+                return
+              end
+              show_preview(bufnr, preview)
+              -- A verse is marked, below `read_at.context` verses before it; a chapter is shown
+              -- from its label, and a book from its start
+              local top_row = top and byte_position(preview.lines, top) or 0
+              local row, col = top_row, 0
+              if range then
+                row, col = byte_position(preview.lines, range.start)
+                local end_row, end_col = byte_position(preview.lines, range['end'])
+                pcall(vim.api.nvim_buf_set_extmark, bufnr, verse_ns, row, col, {
+                  end_row = end_row,
+                  end_col = end_col,
+                  hl_group = 'LogoxideParallelVerse',
+                })
+              end
+              vim.api.nvim_win_call(winid, function()
+                vim.fn.winrestview({ topline = top_row + 1, lnum = row + 1, col = col })
+              end)
+            end)
+          end)
+        end,
+      }),
+      attach_mappings = function(prompt_bufnr, map)
+        actions.select_default:replace(function()
+          local entry = state.get_selected_entry()
+          local typed = vim.trim(state.get_current_line())
+          actions.close(prompt_bufnr)
+          local text = entry and entry.value or typed
+          if text ~= '' then
+            open_at(bible, text, mods)
+          end
+        end)
+        -- What's selected, in the prompt, ready for its chapter (`John `) or verse (`John 3:`)
+        map({ 'i', 'n' }, '<Tab>', function()
+          local entry = state.get_selected_entry()
+          if entry then
+            local after = ({ book = ' ', chapter = ':' })[entry.kind] or ''
+            state.get_current_picker(prompt_bufnr):set_prompt(entry.value .. after)
+          end
+        end)
+        return true
+      end,
+    })
+    :find()
+end
+
+--[[
+:LxReadAt [reference] [bible]: opens the reference (`John 3:16`, `jn 3`) in the whole book, on its
+verse, in the Bible named after it, else the current book's Bible, else the default; without a
+reference, chooses one in Telescope (else asks for one)
+]]
+function M.read_at(args, mods)
+  if not require('logoxide').ensure_lsp() then
+    return
+  end
+  local current_bible = book_of(0)
+  local text, named = split_bible(vim.trim(args or ''))
+  local bible = M.bible(named or current_bible)
+  if not bible or #bible.books == 0 then
+    return vim.notify('logoxide: no Bible has books to read (set `bible` or `bibles`)', vim.log.levels.WARN)
+  end
+  if text ~= '' then
+    return open_at(bible, text, mods)
+  end
+  if config.options.picker ~= 'quickfix' and pcall(require, 'telescope') then
+    return pick_at(bible, mods)
+  end
+  vim.ui.input({ prompt = 'Read at (' .. bible.name .. '): ' }, function(input)
+    if input and vim.trim(input) ~= '' then
+      open_at(bible, vim.trim(input), mods)
+    end
+  end)
+end
+
+-- Completes a reference (books, then chapters, verses, and range ends), then Bible names after
+-- one; only the last word is replaced
+function M.complete_at(lead, cmdline, pos)
+  local candidates = require('logoxide.commands').complete_passage(lead, cmdline, pos)
+  local typed = cmdline:sub(1, pos):gsub('^%S+%s*', '')
+  if typed:match('%d%s+%S*$') then
+    for _, name in ipairs(require('logoxide.bibles').names()) do
+      if vim.startswith(name:lower(), lead:lower()) then
+        table.insert(candidates, name)
+      end
+    end
+  end
+  return candidates
 end
 
 return M

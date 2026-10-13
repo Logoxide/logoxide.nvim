@@ -17,8 +17,8 @@ With [lazy.nvim](https://lazy.folke.io):
   cmd = { 'LxSearch', 'LxQuery', 'LxExplicitOverlap', 'LxAnyOverlap',
           'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxFileReferences',
           'LxDirReferences', 'LxCopy', 'LxInsert', 'LxBuild', 'LxLspStart', 'LxLspStop',
-          'LxBible', 'LxParallel', 'LxSwitch', 'LxResume', 'LxRead', 'LxBibleAdd',
-          'LxBibleSearch', 'LxBibleRemove', 'LxNextBook', 'LxPrevBook',
+          'LxBible', 'LxParallel', 'LxSwitch', 'LxResume', 'LxRead', 'LxReadAt',
+          'LxBibleAdd', 'LxBibleSearch', 'LxBibleRemove', 'LxNextBook', 'LxPrevBook',
           'LxNextChapter', 'LxPrevChapter', 'LxNextVerse', 'LxPrevVerse',
           'LxNextHeading', 'LxPrevHeading' },
   opts = {
@@ -79,8 +79,11 @@ With [lazy.nvim](https://lazy.folke.io):
   verse there lists every reference to it in your notes, and hovering it counts them
 - **Reading**: `:LxRead John` opens a whole book (`1 cor` and `JHN` work too, and
   `:LxRead John KJV` another Bible's), and `:LxRead` alone chooses one in Telescope,
-  previewing each book colored as it reads. In a book, `:LxNextBook`, `:LxNextChapter`,
-  `:LxNextVerse`, `:LxNextHeading` (and `:LxPrev*`) move through the Bible; `navigation` says
+  previewing each book colored as it reads. `:LxReadAt John 3:16` opens a reference's book at
+  its verse, and `:LxReadAt` alone (or `:LxReadAt KJV`) types one in Telescope: suggestions
+  (books, then chapters, then verses) follow as you type, `<Tab>` takes one, and the preview shows
+  the verse in the Bible below the verses before it (`read_at = { context = 3 }`). In a book,
+  `:LxNextBook`, `:LxNextChapter`, `:LxNextVerse`, `:LxNextHeading` (and `:LxPrev*`) move through the Bible; `navigation` says
   what happens past the end (by default books wrap, chapters and headings go on to the next book,
   and verses to the next chapter). Poetry is a line each, indented by `markup.indent`;
   `markup.verse_lines` puts each verse on a line, and `markup.paragraph_gaps` a blank line

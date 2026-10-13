@@ -214,7 +214,7 @@ function M.reference_at_cursor()
   end
   local line = vim.api.nvim_get_current_line()
   local col = vim.api.nvim_win_get_cursor(0)[2] + 1
-  local result = vim.system({ path, '-m', 'json', '--text', line }, { text = true }):wait()
+  local result = vim.system({ path, '--chapters', '-m', 'json', '--text', line }, { text = true }):wait()
   for json in (result.stdout or ''):gmatch('[^\n]+') do
     local ok, m = pcall(vim.json.decode, json)
     if ok and m.column <= col and col <= m.end_column then

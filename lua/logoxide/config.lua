@@ -152,6 +152,9 @@ M.defaults = {
   --   color      or a background color ('#2a3340'), or a highlight definition
   --              ({ bg = '#2a3340', italic = true })
   parallel = { highlight = nil, color = nil },
+  -- :LxReadAt's preview: how many verses before the one chosen are shown above it (the chapter
+  -- from its label when there are fewer)
+  read_at = { context = 3 },
   -- 'telescope', 'quickfix', or 'auto' (Telescope if it is installed)
   picker = 'auto',
   -- Whether searches reuse the topos CLI's cache for files that haven't changed (`--cache`);
