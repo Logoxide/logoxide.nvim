@@ -497,6 +497,15 @@ do
   vim.cmd("edit logoxide://KJV/PSA")
   log("poetry indent", table.concat(vim.api.nvim_buf_get_lines(0, 1, 3, false), "|"))
   indent({ q1 = 0, q2 = 2, q3 = 4, q4 = 6 })
+  -- `markup.verse_lines`: Romans 8:28 and 29 on lines of their own
+  markup.verse_lines = true
+  indent(markup.indent)
+  pcall(vim.cmd, "bwipeout logoxide://BSB/ROM") -- opened before, with the old settings
+  vim.cmd("edit logoxide://BSB/ROM")
+  log("verse lines", table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "|"))
+  vim.cmd("bwipeout")
+  markup.verse_lines = false
+  indent(markup.indent)
   vim.cmd("LxRead John BSB")
   if telescope then
     vim.o.columns, vim.o.lines = 200, 50 -- wide enough for Telescope's previewer

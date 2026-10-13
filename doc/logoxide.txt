@@ -87,6 +87,8 @@ them (see `auto_build`). Binaries on your PATH work too.
       quotes = { show = true, display = '{text}' },
       width = nil,
       indent = { q1 = 0, q2 = 2, q3 = 4, q4 = 6 },
+      verse_lines = false,
+      paragraph_gaps = false,
     },
     -- Named templates: code actions, :LxCopy's forms, and inlay hints
     -- (see |logoxide-templates|)
@@ -519,6 +521,14 @@ unnumbered `q` is `q1`, and an OSIS Bible's `<l level="2">` is `q2`. The
 first line of a hover's passage starts at the margin, and a line broken at
 `markup.width` goes on at the margin. >lua
   markup = { indent = { q1 = 2, q2 = 6, qr = 10 } }
+<
+`markup.verse_lines` (true or false) starts each verse on a line of its own,
+in whole books, hover, and templates; a verse that starts a line of poetry
+keeps its indent. `markup.paragraph_gaps` puts a blank line between
+paragraphs, and between a paragraph and the poetry before or after it, but
+not between a heading or chapter number and the paragraph under it. Both
+are off by default, and a template's `markup` can turn either on for it. >lua
+  markup = { verse_lines = true, paragraph_gaps = true }
 <
 Without `color` or `highlight`, each links to a group of your colorscheme:
 

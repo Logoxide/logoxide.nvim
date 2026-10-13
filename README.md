@@ -36,6 +36,8 @@ With [lazy.nvim](https://lazy.folke.io):
       notes = { show = true, display = '({text})', highlight = 'Comment' },
       width = 80, -- break lines at 80 characters
       indent = { q1 = 0, q2 = 2 }, -- spaces before each line of poetry, by USFM marker
+      verse_lines = true, -- each verse on a line of its own
+      paragraph_gaps = true, -- a blank line between paragraphs
     },
     -- Named templates: code actions ("Insert callout"), :LxCopy's forms, and inlay hints
     templates = {
@@ -78,8 +80,9 @@ With [lazy.nvim](https://lazy.folke.io):
   previewing each book colored as it reads. In a book, `:LxNextBook`, `:LxNextChapter`,
   `:LxNextVerse`, `:LxNextHeading` (and `:LxPrev*`) move through the Bible; `navigation` says
   what happens past the end (by default books wrap, chapters and headings go on to the next book,
-  and verses to the next chapter). Poetry is a line each, indented by `markup.indent`. The plugin
-  maps no keys; see below for some
+  and verses to the next chapter). Poetry is a line each, indented by `markup.indent`;
+  `markup.verse_lines` puts each verse on a line, and `markup.paragraph_gaps` a blank line
+  between paragraphs. The plugin maps no keys; see below for some
 - **Several Bibles**: with `bibles`, a reference followed by a Bible's name (`John 3:16 KJV`)
   uses that Bible for hover, go to definition, completion, templates, and its own verse counts;
   `:LxBible KJV` changes the default, and `:LxParallel KJV` opens the same book in another

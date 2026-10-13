@@ -122,6 +122,7 @@ check() {
     'move books JHN:John ROM:Roma JHN:John' 'move wrap JHN:John JHN:[16] JHN:[17] JHN:[16]' \
     'move headings JHN:Jesu ROM:Roma JHN:Jesu' 'poetry [1] Blessed is the man|  that walketh not.||[2] But his delight' \
     'poetry indent  [1] Blessed is the man|     that walketh not.' \
+    'verse lines Romans 8|[28] And we know that God works all things together for good.|[29] For those God foreknew.' \
     'read starts lsp 1 logoxide://BSB/ROM true' \
     'unnamed before 0' 'unnamed after 1 John 3:16' 'unnamed reformat Read John 3:16 today' 'unnamed edited Romans 8:28' 'restarted 1 true true true' \
     'stopped 0 0' 'started again 1' \

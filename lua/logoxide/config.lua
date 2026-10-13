@@ -62,6 +62,10 @@ M.defaults = {
     -- margin, the lines that continue it (q2, q3, ...) further in. Other markers can be added,
     -- like qr (Selah), qm1, pi1 (indented paragraphs), or li1 (lists)
     indent = { q1 = 0, q2 = 2, q3 = 4, q4 = 6 },
+    -- Each verse on a line of its own (a verse that starts a line of poetry keeps its indent)
+    verse_lines = false,
+    -- A blank line between paragraphs (and around poetry), but not under a heading
+    paragraph_gaps = false,
   },
   -- Completion offers the chapter or verse already typed, first (`Matthew 1` offers Matthew 1,
   -- then Matthew 10, ...), so its passage shows in the documentation. On by default
