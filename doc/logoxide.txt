@@ -120,6 +120,9 @@ them (see `auto_build`). Binaries on your PATH work too.
       filetypes = { 'markdown', 'text' },
       -- The folder searched by references, the code actions, and the commands
       root_markers = { '.git', '.obsidian' },
+      -- More folders they search, beside the root, like { '~/Obsidian' }
+      -- (|logoxide-search-folders|)
+      search_folders = {},
       inlay_hints = true,
       -- Older place for the settings above (the top-level ones win)
       settings = {},
@@ -387,6 +390,18 @@ doesn't exist says what does (`John 3 has 36 verses`). Each reference has an
 information diagnostic with how it's written in your format (`John 3:16`);
 references that don't exist get a warning. Inlay
 hints show the formatted reference where it's written differently.
+
+                                                  *logoxide-search-folders*
+The workspace is the folder with one of `lsp.root_markers` above the buffer
+(else the current directory). `lsp.search_folders` adds folders that go to
+references, the code actions' searches, and |:LxSearch| and the passage
+searches cover too, so notes in `~/Typst` find the references in an Obsidian
+vault elsewhere: >lua
+    lsp = { search_folders = { '~/Obsidian' } }
+<
+Relative folders are in the workspace. They are only searched: Bibles still
+come from the workspace's project (a `logoxide.toml` in a search folder isn't
+used). |:LxDirReferences| keeps to the current directory.
 
 ==============================================================================
 5. BIBLE TEXT                                               *logoxide-text*

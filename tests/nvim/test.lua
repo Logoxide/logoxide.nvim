@@ -628,6 +628,41 @@ do
   vim.cmd("buffer " .. open)
   os.remove(WORK .. "/ws/Gill.epub")
 end
+-- `lsp.search_folders`: go to references and the searches cover a folder outside the workspace
+do
+  -- (:LxLspStart above started it for another buffer)
+  local client = vim.lsp.get_clients({ name = "logoxide" })[1]
+  vim.lsp.buf_attach_client(0, client.id)
+  local cfg = require("logoxide.config")
+  local function in_vault()
+    vim.api.nvim_win_set_cursor(0, { 1, 6 })
+    local params = vim.lsp.util.make_position_params(0, client.offset_encoding)
+    params.context = { includeDeclaration = true }
+    local response = client:request_sync("textDocument/references", params, 5000, 0)
+    local n = 0
+    for _, location in ipairs(response and response.result or {}) do
+      if location.uri:find("/vault/v%.md$") then n = n + 1 end
+    end
+    return n
+  end
+  local before = in_vault()
+  cfg.options.lsp.search_folders = { WORK .. "/vault" }
+  client:notify("workspace/didChangeConfiguration", { settings = { logoxide = cfg.lsp_settings() } })
+  vim.wait(300)
+  local after = in_vault()
+  local cli = 0
+  results(function()
+    require("logoxide.search").run({ "-o", "John 3:16" }, "vault", { done = function(items)
+      for _, it in ipairs(items) do
+        if (it.filename or ""):find("/vault/v%.md$") then cli = cli + 1 end
+      end
+    end })
+  end)
+  log("search folders", before, after, cli)
+  cfg.options.lsp.search_folders = {}
+  client:notify("workspace/didChangeConfiguration", { settings = { logoxide = cfg.lsp_settings() } })
+  vim.cmd("buffer " .. open)
+end
 vim.cmd("checkhealth logoxide")
 local health = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
 log("health ok", select(2, health:gsub("OK", "")), "errors", select(2, health:gsub("ERROR", "")))

@@ -180,9 +180,12 @@ function M.run(args, title, opts)
   vim.list_extend(cmd, args)
   if opts.bufnr then
     vim.list_extend(cmd, buffer_source(opts.bufnr))
-  -- Searching the root unless a path was given (and never reading stdin)
+  -- Searching the root and `lsp.search_folders` unless a path was given (and never reading stdin)
   elseif not names_a_path(args, root) then
     table.insert(cmd, '.')
+    for _, folder in ipairs(config.search_folders()) do
+      table.insert(cmd, folder:match('^/') and folder or vim.fs.joinpath(root, folder))
+    end
   end
   vim.system(cmd, { cwd = root, text = true }, function(result)
     vim.schedule(function()

@@ -17,6 +17,9 @@ mkdir -p "$WORK/ws/.git" "$WORK/ws/My Notes" "$WORK/config" "$WORK/cache"
 printf 'Jn 3:16 again\nand John 3:14-18\n' > "$WORK/ws/My Notes/a.md"
 printf 'John 3, John 2; 3:16, Rom 8:28, Luke 2:1\n' > "$WORK/ws/b.txt"
 printf 'See jn 3:16 here\n' > "$WORK/ws/open.txt"
+# A folder outside the workspace (`lsp.search_folders`)
+mkdir -p "$WORK/vault"
+printf 'Jn 3:16 in the vault\n' > "$WORK/vault/v.md"
 # A book (the `epub` option): an EPUB of two paragraphs, copied into the workspace only while
 # its step runs (the CLI's searches read EPUBs too)
 python3 - "$WORK/Gill.epub" <<'PY'
@@ -128,6 +131,7 @@ check() {
     'stopped 0 0' 'started again 1' \
     'switch logoxide://KJV/ROM true [29] For whom' 'resume logoxide://KJV/ROM [29] For whom 1' \
     'book off true' 'book file logoxide-file true Rom 8:28 Gill' \
+    'search folders 0 1 1' \
     'complete typed Matthew 1 Matthew 10' 'hover trim "" "Jesus and …"' \
     'file references 4 1 3 2 1' 'dir references 5 1' \
     'copy 4 V > [!bible] John 3:16|> Jesus and Nicodemus|> [16] For God so loved the world.' \

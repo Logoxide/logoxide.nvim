@@ -64,7 +64,9 @@ With [lazy.nvim](https://lazy.folke.io):
 - **Language server**: completion, hover, inlay hints, symbols, and diagnostics (each
   reference as formatted, and warnings for verses that don't exist); go to references (`grr`)
   lists the references that are exactly the one under the cursor, and the code actions (`gra`)
-  reformat it or search for it by explicit overlap, any overlap, exact overlap, or inside it
+  reformat it or search for it by explicit overlap, any overlap, exact overlap, or inside it.
+  `lsp.search_folders = { '~/Obsidian' }` has those searches (and `:LxSearch`) cover folders
+  outside the workspace too
 - **Books**: with `epub = true`, go-to-references and the search commands also list the
   references in the workspace's EPUBs (and with `pdf = true`, its PDFs, building logoxide-lsp with
   MuPDF); each opens in a read-only buffer of the book's text (`logoxide-file:///…/Gill.epub`) at

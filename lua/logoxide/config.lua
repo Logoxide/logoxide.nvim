@@ -111,6 +111,9 @@ M.defaults = {
     filetypes = { 'markdown', 'text' },
     -- The folder searched by go-to-references, the code actions, and the search commands
     root_markers = { '.git', '.obsidian' },
+    -- More folders those searches cover, beside the root: like { '~/Obsidian' } to find
+    -- references in a vault from notes elsewhere (relative ones are in the root)
+    search_folders = {},
     -- Show how each reference is written in your format (see `settings['inlay-hints']`)
     inlay_hints = true,
     -- The same as the top-level `settings` (which win where both set a key)
@@ -177,6 +180,13 @@ end
 
 -- The language server's settings: `bible`, `bibles`, `default_bible`, `hover_bibles`, `hover`, `markup`,
 -- `templates`, `complete_typed`, `epub`, `pdf`, `commentaries`, `stretch_notes`, and `strongs`, then `lsp.settings`, then the top-level `settings`
+-- `lsp.search_folders`, `~` and environment variables expanded
+function M.search_folders()
+  return vim.tbl_map(function(folder)
+    return vim.fn.expand(folder)
+  end, M.options.lsp.search_folders or {})
+end
+
 function M.lsp_settings()
   local base = { markup = M.options.markup }
   -- A table of names (an empty one would be a JSON array)
@@ -222,6 +232,9 @@ function M.lsp_settings()
   end
   if M.options.strongs then
     base.strongs = true
+  end
+  if next(M.options.lsp.search_folders or {}) then
+    base['search-folders'] = M.search_folders()
   end
   return vim.tbl_deep_extend('force', base, M.options.lsp.settings or {}, M.options.settings or {})
 end
