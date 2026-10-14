@@ -33,7 +33,11 @@ M.defaults = {
   --          shows first), {translation} (the Bible the reference names; when it names none,
   --          nothing, with the brackets around it); false for no first line. Default
   --          '**{reference}** ({translation})'
-  hover = { trim = false, max = 2000, title = nil },
+  --   book   what hovering a verse in a whole book shows, in this order: 'references' (how many
+  --          references name it, in how many files), 'translations' (the verse in the other
+  --          Bibles: `hover_bibles`' when set, else every other), and 'current' (the verse in the
+  --          Bible being read); {} for no hover. Default { 'references' }
+  hover = { trim = false, max = 2000, title = nil, book = nil },
   -- How Bible text is written and colored (see :help logoxide-markup). Each element has:
   --   show       whether it is shown (hidden headings and notes are left out; the others are
   --              plain text, without their display or color)
@@ -219,6 +223,10 @@ function M.lsp_settings()
   end
   if hover.title ~= nil then
     base['hover-title'] = hover.title or ''
+  end
+  if hover.book ~= nil then
+    -- An empty table is a JSON array, which is what `book-hover` takes
+    base['book-hover'] = hover.book
   end
   if M.options.complete_typed == false then
     base['complete-typed'] = false

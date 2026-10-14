@@ -72,9 +72,12 @@ them (see `auto_build`). Binaries on your PATH work too.
     -- `trim` leaves out its leading whitespace (a heading displayed as
     -- '\n{text}' would start with a blank line); `max` is how many
     -- characters (bytes) show before ` …`, false for no limit; `title`
-    -- is the first line (see |logoxide-translations|), false for none
+    -- is the first line (see |logoxide-translations|), false for none;
+    -- `book` is what hovering a verse in a whole book shows (see
+    -- |logoxide-whole-book-hover|)
     hover = { trim = false, max = 2000,
-              title = '**{reference}** ({translation})' },
+              title = '**{reference}** ({translation})',
+              book = { 'references' } },
     -- How Bible text is written and colored (see |logoxide-markup|)
     markup = {
       verse_numbers = { show = true, display = '[{verse}]' },
@@ -456,6 +459,15 @@ the Bible. Its files are left out of workspace searches. Then:
   with the chapter. Hovering a verse there says how many references name it,
   and in how many files (`???` if searching takes more than half a second;
   what was read is cached, so hovering again gets further).
+                                                *logoxide-whole-book-hover*
+- `hover.book` says what that hover shows, in the order listed:
+  `'references'` (the count above) and `'translations'` (the same verse in
+  the other Bibles, each labeled with its name: `hover_bibles`' when set,
+  else every Bible but the book's own; a Bible numbered differently reads it
+  as it numbers it, like hover on a reference), and `'current'` (the verse
+  in the Bible being read, labeled the same way). `{ 'current',
+  'translations', 'references' }` shows all three; `{}` turns the hover off.
+  A chapter's label has no texts. Default `{ 'references' }`.
 
                                                     *logoxide-translations*
 Several Bibles: `bible` (named after its folder) and `bibles` (named by their

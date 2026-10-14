@@ -76,7 +76,9 @@ With [lazy.nvim](https://lazy.folke.io):
   chapter or verse completion's documentation. Go to definition (`<C-]>`) or declaration opens
   the whole book in a read-only buffer at the passage, with verse numbers, chapters, headings,
   words of Jesus, and so on written and colored the way `markup` says. Go to references on a
-  verse there lists every reference to it in your notes, and hovering it counts them
+  verse there lists every reference to it in your notes, and hovering it counts them (or, with
+  `hover = { book = { 'current', 'translations', 'references' } }`, shows it in this Bible and
+  your others too)
 - **Reading**: `:LxRead John` opens a whole book (`1 cor` and `JHN` work too, and
   `:LxRead John KJV` another Bible's), and `:LxRead` alone chooses one in Telescope,
   previewing each book colored as it reads. `:LxReadAt John 3:16` opens a reference's book at

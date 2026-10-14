@@ -345,6 +345,27 @@ do
   vim.cmd("LxBible BSB")
   vim.wait(3000, function() return hover(2, 6):find("^%*%*John 3:16%*%*\n") ~= nil end)
 end
+-- `hover.book`: hovering a verse in a whole book shows it in the other Bibles
+do
+  local hover_options = require("logoxide.config").options.hover
+  hover_options.book = { "current", "translations" }
+  client:notify("workspace/didChangeConfiguration", { settings = { logoxide = require("logoxide.config").lsp_settings() } })
+  vim.cmd("edit logoxide://BSB/JHN")
+  for i, l in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
+    if l:find("^%[16%]") then vim.api.nvim_win_set_cursor(0, { i, 1 }) end
+  end
+  local value = ""
+  vim.wait(3000, function()
+    local params = vim.lsp.util.make_position_params(0, client.offset_encoding)
+    for _, r in pairs(vim.lsp.buf_request_sync(0, "textDocument/hover", params, 5000) or {}) do
+      value = r.result and r.result.contents.value or value
+    end
+    return value:find("*KJV*", 1, true) ~= nil
+  end)
+  log("book hover", value:match("^[^\n]*"), value:match("%*BSB%*.*%*KJV%*") ~= nil, value:match("that he gave"), value:find("references") ~= nil)
+  hover_options.book = nil
+  client:notify("workspace/didChangeConfiguration", { settings = { logoxide = require("logoxide.config").lsp_settings() } })
+end
 -- :LxParallel: the KJV's John next to the BSB's, on the same verse
 do
   vim.cmd("edit logoxide://BSB/JHN")

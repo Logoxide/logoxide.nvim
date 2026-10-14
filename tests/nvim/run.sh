@@ -116,6 +116,7 @@ check() {
     'verse number @lsp.type.verseNumber.logoxide Special' 'book references 4' 'tag true 4' \
     'bibles BSB|KJV' 'named hover **John 3:16** (KJV) that he gave' 'default hover John 3:16 from BSB' \
     'missing in KJV John 3:17 does not exist in the KJV' 'set default hover John 3:16 from KJV' \
+    'book hover **John 3:16** true that he gave false' \
     'parallel logoxide://KJV/JHN [16] For God so loved the world, that he gave his only begotten Son.' \
     'parallel follows John 3' 'parallel book logoxide://BSB/ROM logoxide://KJV/ROM' 'parallel column [29] For whom' \
     'parallel stays true [29] For those God foreknew.=LogoxideParallelVerse kjv:' 'health bibles 2' \
