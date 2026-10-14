@@ -41,14 +41,25 @@ function M.commands()
   local function from_git(repository, package)
     return { 'cargo', 'install', '--git', repository, '--root', root, package }
   end
-  local lsp = logoxide and install(logoxide, 'logoxide-lsp') or from_git(M.repositories.logoxide, 'logoxide-lsp')
+  -- Built from both checkouts, logoxide's crates use the topos checkout's crates in place of
+  -- crates.io's (the same version), so a change to topos reaches logoxide-lsp without a release
+  local function with_topos(cmd)
+    if topos then
+      for crate, folder in pairs({ ['topos-bible'] = 'topos-lib', ['topos-bible-index'] = 'topos-index', ['topos-bible-formats'] = 'topos-formats' }) do
+        local path = vim.fs.joinpath(topos, 'crates', folder)
+        vim.list_extend(cmd, { '--config', ('patch.crates-io.%s.path = "%s"'):format(crate, path) })
+      end
+    end
+    return cmd
+  end
+  local lsp = logoxide and with_topos(install(logoxide, 'logoxide-lsp')) or from_git(M.repositories.logoxide, 'logoxide-lsp')
   -- PDFs for the `pdf` option
   if require('logoxide.config').options.pdf then
     vim.list_extend(lsp, { '--features', 'pdf' })
   end
   return {
     lsp,
-    logoxide and install(logoxide, 'lx') or from_git(M.repositories.logoxide, 'logoxide-cli'),
+    logoxide and with_topos(install(logoxide, 'lx')) or from_git(M.repositories.logoxide, 'logoxide-cli'),
     topos and install(topos, 'topos-cli') or from_git(M.repositories.topos, 'topos-bible-cli'),
   }
 end

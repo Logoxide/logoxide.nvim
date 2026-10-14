@@ -111,8 +111,16 @@ function M.read(bufnr, uri)
   vim.lsp.buf_attach_client(bufnr, client.id)
 end
 
+-- epub.nvim's integration, when it is installed (and its `logoxide` option is on): an EPUB's
+-- references open in its rendered chapters (epub://…/Gill.epub::chapter.xhtml) at the reference,
+-- and the language server attaches to the chapters
+local function epub_nvim()
+  local ok, integration = pcall(require, 'epub.logoxide')
+  return ok and integration.enabled() and integration or nil
+end
+
 -- Fills a `logoxide-file://` buffer with the book's text, read-only, and attaches the language server
--- (hover on its references)
+-- (hover on its references). With epub.nvim, an EPUB's moves on to its chapter, at the reference
 function M.read_file(bufnr, uri)
   local client = client_for(bufnr)
   if not client then
@@ -136,6 +144,27 @@ function M.read_file(bufnr, uri)
   vim.b[bufnr].logoxide_book = book.title
   bo.filetype = M.file_scheme
   vim.lsp.buf_attach_client(bufnr, client.id)
+  local integration = epub_nvim()
+  if integration then
+    integration.handoff(bufnr, uri)
+  end
+end
+
+-- Attaches the language server to a chapter epub.nvim renders, or a chapter's XHTML in it, for
+-- hover and the rest on its references (starting the server if it isn't running)
+local function attach_chapter(bufnr)
+  local info = vim.b[bufnr].epub
+  local xhtml = info and info.kind == 'file' and (vim.bo[bufnr].filetype == 'xhtml' or vim.bo[bufnr].filetype == 'html')
+  if not info or not (info.kind == 'chapter' or xhtml) or not epub_nvim() or not config.options.lsp.enabled then
+    return
+  end
+  local client = vim.lsp.get_clients({ name = 'logoxide' })[1]
+  if not client and require('logoxide.bin').path('lsp') then
+    client = require('logoxide').ensure_lsp()
+  end
+  if client then
+    vim.lsp.buf_attach_client(bufnr, client.id)
+  end
 end
 
 local fence_ns = vim.api.nvim_create_namespace('topos_bible_fences')
@@ -204,6 +233,28 @@ function M.setup()
     pattern = M.file_scheme .. '://*',
     callback = function(args)
       M.read_file(args.buf, args.match)
+    end,
+  })
+  -- On entering one too, for chapters opened before the server started
+  vim.api.nvim_create_autocmd('FileType', {
+    group = group,
+    pattern = 'epub',
+    callback = function(args)
+      attach_chapter(args.buf)
+    end,
+  })
+  vim.api.nvim_create_autocmd('FileType', {
+    group = group,
+    pattern = { 'xhtml', 'html' },
+    callback = function(args)
+      attach_chapter(args.buf)
+    end,
+  })
+  vim.api.nvim_create_autocmd('BufEnter', {
+    group = group,
+    pattern = { 'epub://*', 'zip://*' },
+    callback = function(args)
+      attach_chapter(args.buf)
     end,
   })
   vim.api.nvim_create_autocmd('ColorScheme', { group = group, callback = M.apply_highlights })

@@ -89,7 +89,8 @@ local function item(line, root, bufnr)
   end
   local line_text = vim.trim(m.line_text or '')
   return {
-    bufnr = not filename and bufnr or nil,
+    -- A buffer that isn't a file on disk (epub.nvim's epub://…), previewed and opened as itself
+    bufnr = (not filename or (bufnr and not vim.uv.fs_stat(filename))) and bufnr or nil,
     filename = filename,
     path = path,
     lnum = m.line,

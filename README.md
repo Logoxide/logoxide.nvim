@@ -71,7 +71,9 @@ With [lazy.nvim](https://lazy.folke.io):
   references in the workspace's EPUBs (and with `pdf = true`, its PDFs, building logoxide-lsp with
   MuPDF); each opens in a read-only buffer of the book's text (`logoxide-file:///…/Gill.epub`) at
   the reference, where hover works too. Off by default: a book takes a moment to read the first
-  time, then its references come from topos's cache (shared with the CLI)
+  time, then its references come from topos's cache (shared with the CLI). With epub.nvim
+  installed (and topos on `$PATH`), an EPUB's references open in its rendered chapters instead, at
+  the reference, and logoxide-lsp attaches to the chapters
 - **Bible text**: with `bible`, hovering a reference shows its text (`K`), and so does a
   chapter or verse completion's documentation. Go to definition (`<C-]>`) or declaration opens
   the whole book in a read-only buffer at the passage, with verse numbers, chapters, headings,
@@ -150,7 +152,9 @@ The plugin and the CLI share `~/.config/topos/config.toml`. See `:help logoxide`
 `:LxBuild` installs `logoxide-lsp` and `lx` (from logoxide) and `topos` (from topos) into the plugin's
 `build/` folder with `cargo install`, from checkouts if you set `source = '~/path/to/topos'` (with
 logoxide beside it) or `source = { topos = ..., logoxide = ... }`, else from GitHub. logoxide-lsp
-can't be installed from GitHub until logoxide is published, so use checkouts for now. Binaries on your `PATH` work too, and `cmd = { lsp = ..., cli = ..., lx = ... }`
+can't be installed from GitHub until logoxide is published, so use checkouts for now. Built from
+both checkouts, logoxide-lsp and lx use the topos checkout's crates instead of crates.io's (Cargo's
+`patch.crates-io`), so a change to topos reaches them before a release. Binaries on your `PATH` work too, and `cmd = { lsp = ..., cli = ..., lx = ... }`
 picks them yourself.
 
 ## Tests
