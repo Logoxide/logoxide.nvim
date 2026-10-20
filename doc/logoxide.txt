@@ -25,10 +25,13 @@ With lazy.nvim: >lua
     dependencies = { 'nvim-telescope/telescope.nvim' }, -- optional
     ft = { 'markdown', 'text' },
     cmd = { 'LxSearch', 'LxQuery', 'LxExplicitOverlap', 'LxAnyOverlap',
-            'LxExactOverlap', 'LxInside', 'LxExcludeOverlap', 'LxFileReferences',
-            'LxDirReferences', 'LxCopy', 'LxInsert', 'LxBuild', 'LxLspStart',
-            'LxLspStop', 'LxSwitch', 'LxResume',
-            'LxRead', 'LxReadAt', 'LxBibleAdd', 'LxBibleSearch', 'LxBibleRemove' },
+            'LxExactOverlap', 'LxInside', 'LxExcludeOverlap',
+            'LxFileReferences', 'LxDirReferences', 'LxCopy', 'LxInsert',
+            'LxBuild', 'LxLspStart', 'LxLspStop', 'LxBible', 'LxParallel',
+            'LxSwitch', 'LxResume', 'LxRead', 'LxReadAt', 'LxBibleAdd',
+            'LxBibleSearch', 'LxBibleRemove',
+            'LxNextBook', 'LxPrevBook', 'LxNextChapter', 'LxPrevChapter',
+            'LxNextVerse', 'LxPrevVerse', 'LxNextHeading', 'LxPrevHeading' },
     opts = {
       bible = '~/Bibles/BSB',
       settings = { format = 'abbreviation', ['inlay-hints'] = 'never' },
@@ -36,26 +39,19 @@ With lazy.nvim: >lua
   }
 <
 Building needs Rust (https://rustup.rs): |:LxBuild| runs `cargo install`
-into the plugin's build/ folder: logoxide-lsp (the language server) from a logoxide
-checkout and topos (the CLI) from a topos checkout (`source`), or from GitHub.
-logoxide-lsp can't be installed from GitHub until logoxide is published, so set
-`source` to checkouts for now. If the binaries are missing, `setup()` builds
-them (see `auto_build`). Binaries on your PATH work too.
+into the plugin's build/ folder: logoxide-lsp (the language server) and lx
+(installing Bibles) from logoxide, and topos (the CLI) from topos, each from
+GitHub (https://github.com/Logoxide/logoxide and
+https://github.com/MasterTemple/topos-bible), or from checkouts with
+`source`. If the binaries are missing, `setup()` builds them (see
+`auto_build`). Binaries on your PATH work too.
 
 `require('logoxide').setup(opts)` takes (the defaults): >lua
   {
-    -- logoxide-lsp's settings, overriding ~/.config/topos/config.toml (the
-    -- CLI's keys), like { format = 'abbreviation',
-    --   ['psg-fmt'] = { join_adjacent = true }, ext = 'md,txt',
-    --   ['inlay-hints'] = 'changed' | 'always' | 'osis' | 'usfm' | 'never'
-    --     | a template's name, or a template like '{first:1}'
-    --       (see |logoxide-templates|),
-    --   ['reference-diagnostics'] = 'info' | 'hint' | 'never',
-    --   ['reference-diagnostics-template'] = their text: a template's
-    --     name, or a template (the reference by default),
-    --   hover = { 'text', 'name', 'abbreviation', 'osis', 'book',
-    --             'testament', 'genres', 'verses', 'location', 'written',
-    --             'bcv', 'translation' } }
+    -- logoxide-lsp's settings, overriding ~/.config/topos/config.toml
+    -- (see |logoxide-settings| for every key and its values), like
+    --   { format = 'abbreviation', ['inlay-hints'] = 'never',
+    --     ['reference-diagnostics'] = 'hint', ext = 'md,txt' }
     settings = {},
     -- A folder of USX files, one book each (see |logoxide-text|)
     bible = nil,
@@ -66,16 +62,22 @@ them (see `auto_build`). Binaries on your PATH work too.
     -- The Bible for references that name none: `bible`'s, else the first
     -- of `bibles` by name (|:LxBible| changes it)
     default_bible = nil,
-    -- Bibles whose text hover also shows, like { 'BSB', 'KJV' }
+    -- Bibles whose text hover also shows, like { 'BSB', 'KJV' } or
+    -- 'KJV'; nil for only the one a reference names (or the default)
     hover_bibles = nil,
     -- How hover and completion documentation show a passage's text:
-    -- `trim` leaves out its leading whitespace (a heading displayed as
-    -- '\n{text}' would start with a blank line); `max` is how many
-    -- characters (bytes) show before ` …`, false for no limit; `title`
-    -- is the first line (see |logoxide-translations|), false for none;
-    -- `book` is what hovering a verse in a whole book shows (see
-    -- |logoxide-whole-book-hover|); `line` is hovering a line away from
-    -- any reference shows every reference on it
+    --   trim   true leaves out its leading whitespace (a heading displayed
+    --          as '\n{text}' would start with a blank line)
+    --   max    how many characters (bytes) show before ` …`: 2000, 500,
+    --          or false for no limit
+    --   title  the first line: '**{reference}** ({translation})',
+    --          '{reference} — {bible}', or false for none
+    --          (|logoxide-translations|)
+    --   book   what hovering a verse in a whole book shows, in order: any
+    --          of 'references', 'translations', 'current'; {} for nothing
+    --          (|logoxide-whole-book-hover|)
+    --   line   true: hovering a line away from any reference shows every
+    --          reference on it
     hover = { trim = false, max = 2000,
               title = '**{reference}** ({translation})',
               book = { 'references' }, line = false },
@@ -131,11 +133,15 @@ them (see `auto_build`). Binaries on your PATH work too.
       -- Older place for the settings above (the top-level ones win)
       settings = {},
     },
-    -- Binary paths; nil uses the plugin's build, then your PATH
-    cmd = { lsp = nil, cli = nil },
-    -- What :LxBuild builds from: a topos checkout (logoxide beside it), or
-    -- { topos = '~/src/topos', logoxide = '~/src/logoxide' }; nil for GitHub
+    -- Binary paths, like { lsp = '~/.cargo/bin/logoxide-lsp' }; nil uses
+    -- the plugin's build, then your PATH
+    cmd = { lsp = nil, cli = nil, lx = nil },
+    -- What :LxBuild builds from: nil for GitHub, a topos checkout
+    -- ('~/src/topos', with logoxide beside it at '~/src/logoxide'), or
+    -- { topos = '~/src/topos', logoxide = '~/src/logoxide' }
     source = nil,
+    -- Build the binaries when setup() can't find them (false: only
+    -- |:LxBuild| does)
     auto_build = true,
     -- Past the end (or start), where |:LxNextBook| and the others go:
     -- books 'wrap' (Revelation → Genesis) or 'stop'; chapters, verses, and
@@ -409,8 +415,8 @@ actions (|gra|) reformat it the way completion writes it (or every reference
 in the file), or search for it by explicit overlap, any overlap, exact
 overlap, or inside it, opening the results like the commands do. Hovering a
 reference shows its text (with a `bible`), full name, abbreviation, OSIS id, book, testament, genres,
-verses, and where it is (`settings.hover` picks which, and their order: the
-default is every one but `written` and `bcv`); hovering a reference that
+verses, and where it is (`settings.hover` picks which, and their order: see
+|logoxide-settings|); hovering a reference that
 doesn't exist says what does (`John 3 has 36 verses`). With `hover.line =
 true`, hovering a line away from any reference shows every reference on it,
 one after another between rules, so a line's only reference hovers from
@@ -430,6 +436,111 @@ vault elsewhere: >lua
 Relative folders are in the workspace. They are only searched: Bibles still
 come from the workspace's project (a `logoxide.toml` in a search folder isn't
 used). |:LxDirReferences| keeps to the current directory.
+
+                                                        *logoxide-settings*
+`settings` is passed to logoxide-lsp as is. Its keys are the CLI's
+config.toml keys (written with dashes, so `['inlay-hints']` in Lua), and
+they win over ~/.config/topos/config.toml. Most plugin options (`bible`,
+`hover`, `markup`, `epub`, ...) are turned into these for you; the ones
+below are only set here.
+
+How references are written ~
+  format        The book's style: `'name'` (John 3:16, the default),
+                `'abbreviation'` (Jn 3:16), `'osis'` (OSIS book codes:
+                Gen 1:1), or `'usfm'` (JHN 3:16). Or a whole format, like
+                `psg-fmt`.
+  psg-fmt       The rest of the format, every key optional: >lua
+                  ['psg-fmt'] = {
+                    book = 'name',            -- as `format`
+                    book_separator = ' ',     -- John·3:16
+                    chapter_verse = ':',      -- 3:16, or '.' for 3.16
+                    range = '-',              -- 3:16-18, or '–'
+                    verse_separator = ',',    -- 3:16,18, or ', '
+                    chapter_separator = '; ', -- 3:16; 4:1
+                    join_adjacent = false,    -- true: 3:16-18, not 3:16,17,18
+                    omit_first_verse_of_chapter_range = false,
+                                              -- true: 1-2:3, not 1:1-2:3
+                    chapter_in_single_chapter_books = false,
+                                              -- true: Jude 1:5, not Jude 5
+                  }
+<               `fmt-book-separator`, `fmt-join-adjacent`, ... set one of
+                these alone, like the CLI's flags.
+
+What each reference shows ~
+  inlay-hints   After each reference:
+                - `'changed'` (default): the formatted reference, where
+                  it's written differently (`jn 3:16` → `John 3:16`)
+                - `'always'`: the formatted reference, everywhere
+                - `'osis'`: the OSIS id (`John.3.16`)
+                - `'usfm'`: the USFM reference (`JHN 3:16`)
+                - `'never'`: none
+                - a template's name from |logoxide-templates| (`'verse'`)
+                - a template written here (anything with a `{`), like
+                  `'{first:1}'`, the passage's first verse
+                `lsp.inlay_hints = false` turns them off in Neovim instead.
+  reference-diagnostics
+                The diagnostic on every reference: `'info'` (default),
+                `'hint'` (shown more quietly), or `'never'`. References that
+                don't exist are warned about either way.
+  reference-diagnostics-template
+                That diagnostic's text: a template's name (`'verse'`) or a
+                template (`'{first:1}'`); the formatted reference by
+                default.
+  hover         The lines under a reference's hover, in this order (a list,
+                or a string like `'osis,book'`; `{}` for none):
+                - `'text'`: the passage, with a `bible`
+                - `'name'`: `John 3:16`
+                - `'abbreviation'`: `Jn 3:16`
+                - `'osis'`: `John.3.16`
+                - `'usfm'`: `JHN 3:16`
+                - `'written'`: as written in the text (`jn 3:16`)
+                - `'book'`: its name, number, and chapter count
+                - `'testament'`: Old or New
+                - `'genres'`: `Gospels, Gospels And Acts`
+                - `'verses'`: how many, and which: `36 (3:1-36)`
+                - `'location'`: its line and columns
+                - `'bcv'`: integer keys, `43003016`
+                - `'translation'`: the Bible it names (`KJV`)
+                Default: `{ 'text', 'name', 'abbreviation', 'osis', 'book',
+                'testament', 'genres', 'verses', 'location' }`. Not the
+                plugin's own `hover` option, which says how the text looks.
+
+What is searched ~
+  ext           File extensions searched for references: `'md,txt'`,
+                `{ 'md', 'typ' }`; empty for every text file.
+  context-book  Treat files as being about this book, so `3:16` alone is a
+                reference: `'John'`.
+  context-heading
+                Lines matching this pattern set the book for the
+                references after them: `'^#+ {book}$'` (a Markdown heading
+                naming a book).
+
+Bible data and config ~
+  data          A JSON file of custom books, genres, and chapter and verse
+                counts, replacing the built-in data.
+  merge-data    JSON files (one, or a list) added to the data: new
+                abbreviations, books, or genres.
+  remove-data   JSON files whose values are removed from the data.
+  library       The logoxide library: `'~/.local/share/logoxide'` (else
+                `$LOGOXIDE_HOME`, else logoxide's config.toml's `library`).
+  project       The folder whose `logoxide.toml` names the Bibles (else a
+                workspace folder with one, else the library's own).
+  config        Read this config file instead of
+                ~/.config/topos/config.toml.
+  no-config     `true`: read no config file.
+
+For example, abbreviated and joined, quiet diagnostics showing each verse,
+and no inlay hints: >lua
+  settings = {
+    format = 'abbreviation',
+    ['psg-fmt'] = { join_adjacent = true },
+    ['reference-diagnostics'] = 'hint',
+    ['reference-diagnostics-template'] = '{first:1}',
+    ['inlay-hints'] = 'never',
+    hover = { 'text', 'osis', 'verses' },
+    ext = 'md,txt,typ',
+  }
+<
 
 ==============================================================================
 5. BIBLE TEXT                                               *logoxide-text*

@@ -2,13 +2,16 @@
 local M = {}
 
 M.defaults = {
-  -- logoxide-lsp's settings, overriding ~/.config/topos/config.toml (the CLI's keys), like
-  -- { format = 'abbreviation', ['psg-fmt'] = { join_adjacent = true },
-  --   ['inlay-hints'] = 'never' (or a template, like '{first:1}'),
-  --   ['reference-diagnostics'] = 'hint',
-  --   ['reference-diagnostics-template'] = 'verse' (a template's name, or a template),
+  -- logoxide-lsp's settings, overriding ~/.config/topos/config.toml (the CLI's keys; every key
+  -- and its values are in :help logoxide-settings), like
+  -- { format = 'abbreviation',                        -- 'name', 'abbreviation', 'osis', 'usfm'
+  --   ['psg-fmt'] = { join_adjacent = true },
+  --   ['inlay-hints'] = 'never',                      -- 'changed', 'always', 'osis', 'usfm',
+  --                                                   -- 'never', a template's name, or '{first:1}'
+  --   ['reference-diagnostics'] = 'hint',             -- 'info', 'hint', 'never'
+  --   ['reference-diagnostics-template'] = 'verse',   -- a template's name, or a template
   --   ext = 'md,txt',
-  --   hover = { 'osis', 'book', 'genres', 'verses' } }
+  --   hover = { 'osis', 'book', 'genres', 'verses' } } -- the lines under a reference's hover
   settings = {},
   -- A folder of USX files (one book each, like JHN.usx, as Paratext, the Digital Bible Library,
   -- and eBible.org publish them): hover shows a reference's text, and go-to-definition opens the
@@ -127,9 +130,8 @@ M.defaults = {
   },
   -- Paths to the binaries; nil uses the plugin's own build, then your PATH
   cmd = { lsp = nil, cli = nil, lx = nil },
-  -- What :LxBuild builds from: a topos checkout ('~/src/topos', with logoxide beside it), or
-  -- { topos = '~/src/topos', logoxide = '~/src/logoxide' }; nil for GitHub (logoxide-lsp can't be
-  -- installed from GitHub until logoxide is published, so set a logoxide checkout for now)
+  -- What :LxBuild builds from: nil for GitHub, a topos checkout ('~/src/topos', with logoxide
+  -- beside it), or { topos = '~/src/topos', logoxide = '~/src/logoxide' }
   source = nil,
   -- Build the binaries when setup can't find them (takes a few minutes the first time)
   auto_build = true,

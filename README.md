@@ -48,12 +48,13 @@ With [lazy.nvim](https://lazy.folke.io):
       verse = { display = '{first:1}', markup = { headings = { show = false } } },
     },
     -- logoxide-lsp's settings: the CLI's config.toml keys, which these override
+    -- (:help logoxide-settings lists every key and its values)
     settings = {
-      format = 'name',                        -- or 'abbreviation' for Jn 3:16
+      format = 'name',                        -- or 'abbreviation' (Jn 3:16), 'osis', 'usfm'
       ['psg-fmt'] = { join_adjacent = true }, -- 3:16-18, not 3:16,17,18
       ['reference-diagnostics'] = 'hint',     -- 'info' (default), 'hint', or 'never'
       ['reference-diagnostics-template'] = 'verse', -- their text (the reference by default)
-      ['inlay-hints'] = 'never',              -- 'changed' (default), 'always', 'osis', 'never',
+      ['inlay-hints'] = 'never',              -- 'changed' (default), 'always', 'osis', 'usfm', 'never',
                                               -- a template's name ('verse'), or a template
       ext = 'md,txt',                         -- what references and searches cover
     },
@@ -151,8 +152,8 @@ The plugin and the CLI share `~/.config/topos/config.toml`. See `:help logoxide`
 
 `:LxBuild` installs `logoxide-lsp` and `lx` (from logoxide) and `topos` (from topos) into the plugin's
 `build/` folder with `cargo install`, from checkouts if you set `source = '~/path/to/topos'` (with
-logoxide beside it) or `source = { topos = ..., logoxide = ... }`, else from GitHub. logoxide-lsp
-can't be installed from GitHub until logoxide is published, so use checkouts for now. Built from
+logoxide beside it) or `source = { topos = ..., logoxide = ... }`, else from GitHub
+([logoxide](https://github.com/Logoxide/logoxide) and [topos](https://github.com/MasterTemple/topos-bible)). Built from
 both checkouts, logoxide-lsp and lx use the topos checkout's crates instead of crates.io's (Cargo's
 `patch.crates-io`), so a change to topos reaches them before a release. Binaries on your `PATH` work too, and `cmd = { lsp = ..., cli = ..., lx = ... }`
 picks them yourself.
