@@ -134,7 +134,7 @@ check() {
     'read at logoxide://KJV/ROM [29] For whom' \
     'book off true' 'book file logoxide-file true Rom 8:28 Gill' \
     'search folders 0 1 1' \
-    'complete typed Matthew 1 Matthew 10' 'hover trim "" "Jesus and …"' \
+    'complete typed Matthew 1 Matthew 10' 'hover trim "" "Jesus and …"' 'hover line "" "**John 3:16**"' \
     'file references 3 1 2 2 1' 'dir references 5 1' \
     'copy 4 V > [!bible] John 3:16|> Jesus and Nicodemus|> [16] For God so loved the world.' \
     'insert 2 3 > [!bible] John 3:16' 'verse hint [16] For God so loved the world.'; do

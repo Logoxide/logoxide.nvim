@@ -37,7 +37,9 @@ M.defaults = {
   --          references name it, in how many files), 'translations' (the verse in the other
   --          Bibles: `hover_bibles`' when set, else every other), and 'current' (the verse in the
   --          Bible being read); {} for no hover. Default { 'references' }
-  hover = { trim = false, max = 2000, title = nil, book = nil },
+  --   line   hovering a line away from any reference shows every reference on it, one after
+  --          another (so a line's only reference hovers from anywhere on it). Off by default
+  hover = { trim = false, max = 2000, title = nil, book = nil, line = false },
   -- How Bible text is written and colored (see :help logoxide-markup). Each element has:
   --   show       whether it is shown (hidden headings and notes are left out; the others are
   --              plain text, without their display or color)
@@ -217,6 +219,9 @@ function M.lsp_settings()
   local hover = M.options.hover or {}
   if hover.trim then
     base['hover-trim'] = true
+  end
+  if hover.line then
+    base['hover-line'] = true
   end
   if hover.max ~= nil then
     base['hover-max'] = hover.max or 0

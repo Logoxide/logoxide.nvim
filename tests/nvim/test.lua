@@ -198,6 +198,25 @@ do
   options.hover = { trim = false, max = 2000 }
   configure()
 end
+-- `hover.line` hovers the line's references from anywhere on it
+do
+  local options = require("logoxide.config").options
+  local function title()
+    local params = vim.lsp.util.make_position_params(0, "utf-16")
+    params.position = { line = 0, character = 1 }
+    local value = ""
+    for _, r in pairs(vim.lsp.buf_request_sync(0, "textDocument/hover", params, 5000) or {}) do value = r.result and r.result.contents.value or value end
+    return vim.inspect(value:match("^[^\n]*"))
+  end
+  local off = title()
+  options.hover.line = true
+  client:notify("workspace/didChangeConfiguration", { settings = { logoxide = require("logoxide.config").lsp_settings() } })
+  vim.wait(300)
+  log("hover line", off, title())
+  options.hover.line = false
+  client:notify("workspace/didChangeConfiguration", { settings = { logoxide = require("logoxide.config").lsp_settings() } })
+  vim.wait(300)
+end
 -- Go to definition opens the whole book, read-only, at the verse
 vim.lsp.buf.definition()
 vim.wait(5000, function() return vim.api.nvim_buf_get_name(0):find("^logoxide://") ~= nil end)

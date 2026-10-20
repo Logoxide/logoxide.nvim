@@ -74,10 +74,11 @@ them (see `auto_build`). Binaries on your PATH work too.
     -- characters (bytes) show before ` …`, false for no limit; `title`
     -- is the first line (see |logoxide-translations|), false for none;
     -- `book` is what hovering a verse in a whole book shows (see
-    -- |logoxide-whole-book-hover|)
+    -- |logoxide-whole-book-hover|); `line` is hovering a line away from
+    -- any reference shows every reference on it
     hover = { trim = false, max = 2000,
               title = '**{reference}** ({translation})',
-              book = { 'references' } },
+              book = { 'references' }, line = false },
     -- How Bible text is written and colored (see |logoxide-markup|)
     markup = {
       verse_numbers = { show = true, display = '[{verse}]' },
@@ -410,7 +411,10 @@ overlap, or inside it, opening the results like the commands do. Hovering a
 reference shows its text (with a `bible`), full name, abbreviation, OSIS id, book, testament, genres,
 verses, and where it is (`settings.hover` picks which, and their order: the
 default is every one but `written` and `bcv`); hovering a reference that
-doesn't exist says what does (`John 3 has 36 verses`). Each reference has an
+doesn't exist says what does (`John 3 has 36 verses`). With `hover.line =
+true`, hovering a line away from any reference shows every reference on it,
+one after another between rules, so a line's only reference hovers from
+anywhere on the line. Each reference has an
 information diagnostic with how it's written in your format (`John 3:16`);
 references that don't exist get a warning. Inlay
 hints show the formatted reference where it's written differently.
